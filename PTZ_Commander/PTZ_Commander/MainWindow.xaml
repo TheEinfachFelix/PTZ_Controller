@@ -7,7 +7,9 @@
         mc:Ignorable="d"
         Title="PTZ-Commander" Height="450" Width="800">
 
+    
     <Window.Resources>
+        <!-- ______________ For Telly Button ______________ -->
         <ControlTemplate x:Key="NoMouseOverButtonTemplate"  TargetType="Button">
             <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"  BorderThickness="{TemplateBinding BorderThickness}">
                 <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
@@ -25,6 +27,8 @@
 
     <TabControl Name="tabDynamic" ItemsSource="{Binding}" SelectionChanged="tabDynamic_SelectionChanged">
         <TabControl.Resources>
+
+            <!-- ______________ Default Header ______________ -->
             <DataTemplate x:Key="TabHeader" DataType="TabItem">
                 <DockPanel>
                     <Button Name="btnDelete" DockPanel.Dock="Right" Margin="5,0,0,0" Padding="2"
@@ -36,12 +40,24 @@
                 
             </DataTemplate>
 
+            <!-- ______________ Header for menu ______________ -->
             <DataTemplate x:Key="TabHeaderUdel" DataType="TabItem">
                 <DockPanel>
-                    <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType={x:Type TabItem}}, Path=Header}" />
+                    <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType={x:Type TabItem}}, Path=Header}"  Padding="2"/>
                 </DockPanel>
             </DataTemplate>
 
+
+            <!-- ______________ General Settings ______________ -->
+            <DataTemplate x:Key="TabMenue" DataType="TabItem">
+                <Grid>
+
+                    <Button>menueee</Button>
+
+                </Grid>
+            </DataTemplate>
+
+            <!-- ______________ Cam Stuff ______________ -->
             <DataTemplate x:Key="TabContend" DataType="TabItem">
                 <TabControl SelectionChanged="Cam_Changed" >
                     <TabControl.Resources>
@@ -68,18 +84,7 @@
                 </TabControl>
             </DataTemplate>
 
-            <DataTemplate x:Key="TabMenue" DataType="TabItem">
-                <Grid>
-
-                    <Button>menueee</Button>
-
-                </Grid>
-            </DataTemplate>
-
-
-                          
-
-
+            <!-- ______________ Style for close Button ______________ -->
             <Style TargetType="TextBox">
                 <Setter Property="VerticalAlignment" Value="Stretch"></Setter>
                 <Setter Property="HorizontalAlignment" Value="Stretch"></Setter>

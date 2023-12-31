@@ -57,6 +57,11 @@ namespace PTZ_Comander
                 tabDynamic.SelectedIndex = 0;
 
                 this.DataContext = _Tally;
+
+                foreach (var i in settings[0].Controller)
+                {
+                    this.AddTabItem();
+                }
             }
             catch (Exception ex)
             {
@@ -153,7 +158,6 @@ namespace PTZ_Comander
                     controllerNR = _tabItems.IndexOf(tab)-1;
 
                 tally_Update();
-
             }
         }
 
@@ -219,14 +223,14 @@ namespace PTZ_Comander
             }
         }
 
-
         private void tally_Update()
         {
+            if(settings[0].Controller.Count == 0 )
+                return;
             //Console.WriteLine(_Tally.Collor.ToString());
             _Tally.Collor = Brushes.White;
             if (settings[0].Controller[controllerNR].Cams[camNR].Tally)
                 _Tally.Collor = Brushes.PaleVioletRed;
-
             //Console.WriteLine(_Tally.Collor.ToString());
         }
 
@@ -312,13 +316,14 @@ namespace PTZ_Comander
 -   [3] tally push binding update
 -   [7] subtabs updating
 - X [3] tab create dublicate error fix
-- x [5] master settings
+- X [5] master settings
 -   [1] Content for settings
 - X [2] save to Json
 - X [5] tab cloning / fake cloning 
 - X [2] catch if json not long enave
 -   [3] remov controller from json
--   [2] autospawn tabs
+- X [2] autospawn tabs
+-   [2] Fix json delete
 
 
  */
