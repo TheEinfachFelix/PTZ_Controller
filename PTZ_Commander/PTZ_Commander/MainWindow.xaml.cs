@@ -189,12 +189,6 @@ namespace PTZ_Comander
     
                 if (tab != null)
                 {
-                    /*if (_tabItems.Count < 3)
-                    {
-                        MessageBox.Show("Cannot remove last tab.");
-                    }
-                    else 
-                    */
                     if (MessageBox.Show(string.Format("Are you sure you want to remove the tab '{0}'?", tab.Header.ToString()),"Remove Tab", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                     {
                                   // get selected tab
@@ -202,7 +196,8 @@ namespace PTZ_Comander
 
                                   // clear tab control binding
                         tabDynamic.DataContext = null;
-            
+                        settings[0].Controller.RemoveAt(_tabItems.IndexOf(tab) - 1);
+                        
                         _tabItems.Remove(tab);
             
                                   // bind tab control
@@ -211,15 +206,15 @@ namespace PTZ_Comander
                                   // select previously selected tab. if that is removed then select first tab
                         if (selectedTab == null || selectedTab.Equals(tab))
                         {
-                            selectedTab = _tabItems[0];
-                        }
-                        tabDynamic.SelectedItem = selectedTab;
+                            tabDynamic.SelectedItem = _tabItems[0];
+                        }  
                     }
                 }
             }  
-            catch 
+            catch (Exception ex)
             {
-                MessageBox.Show("Ein Fehler ist aufgetreten");
+
+                MessageBox.Show($"Ein Fehler ist aufgetreten: {ex.Message}");
             }
         }
 
@@ -323,7 +318,7 @@ namespace PTZ_Comander
 - X [2] catch if json not long enave
 -   [3] remov controller from json
 - X [2] autospawn tabs
--   [2] Fix json delete
+- X [2] Fix json delete
 
 
  */
