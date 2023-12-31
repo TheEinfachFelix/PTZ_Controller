@@ -1,0 +1,18 @@
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\bin\Debug\PTZ Comander.exe.config
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\bin\Debug\PTZ Comander.exe
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\bin\Debug\PTZ Comander.pdb
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\obj\Debug\PTZ Comander.csproj.AssemblyReference.cache
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\obj\Debug\MainWindow.g.cs
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\obj\Debug\App.g.cs
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\obj\Debug\PTZ Comander_MarkupCompile.cache
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\obj\Debug\PTZ Comander_MarkupCompile.lref
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\obj\Debug\MainWindow.baml
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\obj\Debug\PTZ Comander.g.resources
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\obj\Debug\PTZ_Comander.Properties.Resources.resources
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\obj\Debug\PTZ Comander.csproj.GenerateResource.cache
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\obj\Debug\PTZ Comander.csproj.CoreCompileInputs.cache
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\obj\Debug\PTZ Comander.exe
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\obj\Debug\PTZ Comander.pdb
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\bin\Debug\Newtonsoft.Json.dll
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\bin\Debug\Newtonsoft.Json.xml
+G:\Felix\GitHub\PTZ_Controller\PTZ Comander\PTZ Comander\obj\Debug\PTZ Comander.csproj.CopyComplete
