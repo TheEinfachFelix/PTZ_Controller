@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -26,7 +27,13 @@ namespace PTZ_Comander
         private TabItem _tabAdd;
         List<Settings> settings;
         int controllerNR = 0;
-        object tally;
+        int camNR = 0;
+        int controllerINIT = 0;
+
+        Tally _Tally = new Tally()
+        {
+            Collor = Brushes.White,
+        };
 
         public MainWindow()
         {
@@ -35,24 +42,21 @@ namespace PTZ_Comander
                 InitializeComponent();
    
                 LoadJson();
-                // initialize tabItem array
-                _tabItems = new List<TabItem>();
- 
-                // add a tabItem with + in header 
-                _tabAdd = new TabItem();
+                
+                _tabItems = new List<TabItem>(); // initialize tabItem array
+
+                _tabAdd = new TabItem();// add a tabItem with + in header 
                 _tabAdd.Header = "+";
 
-                // tabAdd.MouseLeftButtonUp += new MouseButtonEventHandler(tabAdd_MouseLeftButtonUp);
-  
                 _tabItems.Add(_tabAdd);
-   
-                // add first tab
-                this.AddTabItem();
-  
-                // bind tab control
-                tabDynamic.DataContext = _tabItems;
+
+                this.AddTabItem();// add first tab
+
+                tabDynamic.DataContext = _tabItems;// bind tab control
   
                 tabDynamic.SelectedIndex = 0;
+
+                this.DataContext = _Tally;
             }
             catch (Exception ex)
             {
@@ -68,39 +72,29 @@ namespace PTZ_Comander
 
         private TabItem AddTabItem()
         {
-            int count = _tabItems.Count;
-            int insertCount = count;
-   
-        // create new tab item
-            TabItem tab = new TabItem();
+            controllerINIT++;
+            TabItem tab = new TabItem();// create new tab item
     
-
-            tab.Header = string.Format("Controller {0}", count-1);
-            tab.Name = string.Format("tab{0}", count);  // hier werden doppelt names erstellt das ist das problem ich weiß noch nicht wir ich es fix 
+            tab.Header = string.Format("Controller {0}", controllerINIT - 1);
+            tab.Name = string.Format("tab{0}", controllerINIT);
             tab.HeaderTemplate = tabDynamic.FindResource("TabHeader") as DataTemplate;
             tab.ContentTemplate = tabDynamic.FindResource("TabContend") as DataTemplate;
-
-            if(count == 1)
+            
+            if(controllerINIT == 1)
             {
                 tab.Header = "Meune";
-                tab.Name = string.Format("tab{0}", count);  // hier werden doppelt names erstellt das ist das problem ich weiß noch nicht wir ich es fix 
+                tab.Name = string.Format("tab{0}", controllerINIT);  // hier werden doppelt names erstellt das ist das problem ich weiß noch nicht wir ich es fix 
                 tab.HeaderTemplate = tabDynamic.FindResource("TabHeaderUdel") as DataTemplate;
                 tab.ContentTemplate = tabDynamic.FindResource("TabMenue") as DataTemplate;
             }
-            
-            //tab.MouseDoubleClick += new MouseButtonEventHandler(tab_MouseDoubleClick);
 
-            // add controls to tab item, this case I added just a textbox
-            TextBox txt = new TextBox();
+            TextBox txt = new TextBox(); // add controls to tab item, this case I added just a textbox
             txt.Name = "txt";
-    
+
             tab.Content = txt;
-    
-               // insert tab item right before the last (+) tab item
-            _tabItems.Insert(insertCount - 1, tab);
 
-            //tally = tab.FindName("tally");
-
+            _tabItems.Insert(_tabItems.Count - 1, tab); // insert tab item right before the last (+) tab item
+            
             return tab;
         }
         
@@ -136,7 +130,7 @@ namespace PTZ_Comander
 
         private void tabDynamic_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            TabItem tab = tabDynamic.SelectedItem as TabItem;
+            TabItem tab = (sender as TabControl).SelectedItem as TabItem;
             if (tab == null) return;
 
             if (tab.Equals(_tabAdd))
@@ -144,33 +138,40 @@ namespace PTZ_Comander
                 if (settings[0].Controller.Count <= _tabItems.Count-1)
                     CreateNewController();
 
-                // clear tab control binding
-                tabDynamic.DataContext = null;
+                (sender as TabControl).DataContext = null;// clear tab control binding
 
-                TabItem newTab = this.AddTabItem();
+                TabItem newTab = this.AddTabItem();// bind tab control
 
-                // bind tab control
-                tabDynamic.DataContext = _tabItems;
+                (sender as TabControl).DataContext = _tabItems;
 
-                // select newly added tab item
-                tabDynamic.SelectedItem = newTab;
-                
+                (sender as TabControl).SelectedItem = newTab;// select newly added tab item
             }
             else
             {
                 controllerNR = _tabItems.IndexOf(tab);
                 if(controllerNR != 0)
-                {
                     controllerNR = _tabItems.IndexOf(tab)-1;
-                }
-                if (tally != null) 
-                { 
-                    tally_Update(tally);
-                }
+
+                tally_Update();
+
             }
-            
-            Console.WriteLine(controllerNR);
-            //Console.WriteLine(settings[0].Controller[controllerNR].Cams[settings[0].Controller[settings[0].GeneralSettings.LastViewed].LastViewed].Tally);
+        }
+
+        private void Cam_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            //Console.WriteLine("tabchage");
+            int tabNR = (sender as TabControl).SelectedIndex;
+
+            if ((sender as TabControl).SelectedItem as TabItem == null) return;
+
+            //////////////// Update Cam NR ////////////////
+            camNR = tabNR;
+            if (camNR != 0)
+                camNR = tabNR - 1;
+
+            tally_Update();
+            //Console.WriteLine($"Tab ID: {(sender as TabControl).SelectedIndex.ToString()}");
+            //Console.WriteLine($"cam NR {camNR}");
         }
 
         private void btnDelete_Click(object sender, RoutedEventArgs e)
@@ -219,25 +220,22 @@ namespace PTZ_Comander
         }
 
 
-        private void tally_Update(object psender)
+        private void tally_Update()
         {
-            (psender as Button).Background = Brushes.White;
-            if (settings[0].Controller[controllerNR].Cams[0].Tally)
-                (psender as Button).Background = Brushes.PaleVioletRed;
+            //Console.WriteLine(_Tally.Collor.ToString());
+            _Tally.Collor = Brushes.White;
+            if (settings[0].Controller[controllerNR].Cams[camNR].Tally)
+                _Tally.Collor = Brushes.PaleVioletRed;
 
+            //Console.WriteLine(_Tally.Collor.ToString());
         }
 
         private void tally_Click(object sender, RoutedEventArgs e)
         {
-            settings[0].Controller[controllerNR].Cams[settings[0].Controller[settings[0].GeneralSettings.LastViewed].LastViewed].Tally = !settings[0].Controller[controllerNR].Cams[settings[0].Controller[settings[0].GeneralSettings.LastViewed].LastViewed].Tally;
-
-            tally_Update(sender);
-            
-            tally = sender;
-
+            (settings[0].Controller[controllerNR].Cams[camNR].Tally) = !(settings[0].Controller[controllerNR].Cams[camNR].Tally);
+            tally_Update();
             Console.WriteLine("ComToCam: tally switch");
         }
-
 
         public void LoadJson()
         {
@@ -252,8 +250,7 @@ namespace PTZ_Comander
         {
             string json = JsonConvert.SerializeObject(settings);
             File.WriteAllText("file.json", json);
-            Console.WriteLine("Saved Json!");
-
+            Console.WriteLine("Saved Json to file!");
         }
 
         public void CreateNewController()
@@ -267,49 +264,42 @@ namespace PTZ_Comander
                 settings[0].Controller.Add((Controller)h[0]);
 
             }
-
         }
+    }
 
-        public class GeneralSettings
-        {
-            public int LastViewed { get; set; }
-            public int a { get; set; }
-            public int b { get; set; }
-        }
+    public class Tally
+    {
+        public SolidColorBrush Collor { get; set; }
+    }
+    public class GeneralSettings
+    {
+        public int LastViewed { get; set; }
+        public int a { get; set; }
+        public int b { get; set; }
+    }
 
-        public class Cam
-        {
-            public string Name { get; set; }
-            public bool Tally { get; set; }
-            public int Zoom { get; set; }
-            public int Focus { get; set; }
-            public int X { get; set; }
-            public int Y { get; set; }
-        }
+    public class Cam
+    {
+        public string Name { get; set; }
+        public bool Tally { get; set; }
+        public int Zoom { get; set; }
+        public int Focus { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+    }
 
-        public class Controller
-        {
-            public string Name { get; set; }
-            public string Ip { get; set; }
-            public int LastViewed { get; set; }
-            public IList<Cam> Cams { get; set; }
-        }
+    public class Controller
+    {
+        public string Name { get; set; }
+        public string Ip { get; set; }
+        public int LastViewed { get; set; }
+        public IList<Cam> Cams { get; set; }
+    }
 
-        public class Settings
-        {
-            public GeneralSettings GeneralSettings { get; set; }
-            public IList<Controller> Controller { get; set; }
-        }
-
-
-
-
-
-
-
-
-
-
+    public class Settings
+    {
+        public GeneralSettings GeneralSettings { get; set; }
+        public IList<Controller> Controller { get; set; }
     }
 }
 
@@ -318,10 +308,17 @@ namespace PTZ_Comander
 /*
  TODO:
 
+- X [9] Template updating
+-   [3] tally push binding update
 -   [7] subtabs updating
--   [5] master settings
+- X [3] tab create dublicate error fix
+- x [5] master settings
+-   [1] Content for settings
 - X [2] save to Json
--   [5] tab cloning / fake cloning 
--   [2] catch if json not long enave
- 
+- X [5] tab cloning / fake cloning 
+- X [2] catch if json not long enave
+-   [3] remov controller from json
+-   [2] autospawn tabs
+
+
  */

@@ -19,15 +19,15 @@
                 </Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate>
+        
     </Window.Resources>
 
 
     <TabControl Name="tabDynamic" ItemsSource="{Binding}" SelectionChanged="tabDynamic_SelectionChanged">
         <TabControl.Resources>
-            
             <DataTemplate x:Key="TabHeader" DataType="TabItem">
                 <DockPanel>
-                    <Button Name="btnDelete" DockPanel.Dock="Right" Margin="5,0,0,0" Padding="2" 
+                    <Button Name="btnDelete" DockPanel.Dock="Right" Margin="5,0,0,0" Padding="2"
                             Click="btnDelete_Click" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type TabItem}}, Path=Name}">
                         X
                     </Button>
@@ -40,26 +40,32 @@
                 <DockPanel>
                     <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType={x:Type TabItem}}, Path=Header}" />
                 </DockPanel>
-
             </DataTemplate>
 
             <DataTemplate x:Key="TabContend" DataType="TabItem">
-                <TabControl>
-                    <TabItem Header="Cam 1">
-                        <Button x:Name="tally" Click="tally_Click" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type TabItem}}, Path=Name}" 
-                            Height="25" Width="50" Template="{StaticResource NoMouseOverButtonTemplate}">tally</Button>
+                <TabControl SelectionChanged="Cam_Changed" >
+                    <TabControl.Resources>
+                        <DataTemplate x:Key="TabControllerMenue" DataType="TabItem">
+                            <Grid>
+                                <Button>TabControllerMenue</Button>
+                            </Grid>
+                        </DataTemplate>
 
-                    </TabItem>
-                    <TabItem Header="Cam2 ">
-                    </TabItem>
-                    <TabItem Header="Cam3 "/>
-                    <TabItem Header="Cam4 "/>
-                    <TabItem Header="Settings">
-                        <Button>Settings soon</Button>
-                    </TabItem>
+                        <DataTemplate x:Key="TabCam" DataType="TabItem">
+                            <Grid>
+                                <Button x:Name="tally" Click="tally_Click"  Background="{Binding Collor, Mode=TwoWay}"
+                        CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type TabItem}}, Path=Name}" 
+                        Height="25" Width="50" Template="{StaticResource NoMouseOverButtonTemplate}">tally</Button>
+                            </Grid>
+                        </DataTemplate>
 
+                    </TabControl.Resources>
+                    <TabItem Header="Settings" ContentTemplate="{StaticResource TabControllerMenue}"/>
+                    <TabItem Header="Cam 1"  ContentTemplate="{StaticResource TabCam}"/>
+                    <TabItem Header="Cam2 " ContentTemplate="{StaticResource TabCam}"/>
+                    <TabItem Header="Cam3 " ContentTemplate="{StaticResource TabCam}"/>
+                    <TabItem Header="Cam4 " ContentTemplate="{StaticResource TabCam}"/>
                 </TabControl>
-
             </DataTemplate>
 
             <DataTemplate x:Key="TabMenue" DataType="TabItem">
@@ -69,6 +75,9 @@
 
                 </Grid>
             </DataTemplate>
+
+
+                          
 
 
             <Style TargetType="TextBox">
