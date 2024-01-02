@@ -2,8 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -30,34 +32,36 @@ namespace PTZ_Comander
         int camNR = 0;
         int controllerINIT = 0;
 
-        Tally _Tally = new Tally()
+        DataBinding _Binding = new DataBinding()
         {
-            Collor = Brushes.White,
+            TallyCollor = Brushes.Black,
+            ContrName = "not Loaded",
+            ContrIP = "not Loaded",
+            GenA = "0"
+
         };
 
         public MainWindow()
         {
             try
             {
+                DataContext = _Binding;
+
                 InitializeComponent();
    
                 LoadJson();
-                
+               
                 _tabItems = new List<TabItem>(); // initialize tabItem array
 
-                _tabAdd = new TabItem();// add a tabItem with + in header 
+                // create add tab
+                _tabAdd = new TabItem();
                 _tabAdd.Header = "+";
-
                 _tabItems.Add(_tabAdd);
 
-                this.AddTabItem();// add first tab
-
                 tabDynamic.DataContext = _tabItems;// bind tab control
-  
                 tabDynamic.SelectedIndex = 0;
 
-                this.DataContext = _Tally;
-
+                // load tabs from settings
                 foreach (var i in settings[0].Controller)
                 {
                     this.AddTabItem();
@@ -74,65 +78,32 @@ namespace PTZ_Comander
             SaveJson();
         }
 
-
         private TabItem AddTabItem()
         {
             controllerINIT++;
             TabItem tab = new TabItem();// create new tab item
     
+            // für jedes Neue Tab
             tab.Header = string.Format("Controller {0}", controllerINIT - 1);
             tab.Name = string.Format("tab{0}", controllerINIT);
             tab.HeaderTemplate = tabDynamic.FindResource("TabHeader") as DataTemplate;
             tab.ContentTemplate = tabDynamic.FindResource("TabContend") as DataTemplate;
-            
-            if(controllerINIT == 1)
+            tab.Content = _Binding; // this is the key responsibel for the binding
+
+            // Für das Menue, wird nur einmal ausgeführt
+            if (controllerINIT == 1)
             {
-                tab.Header = "Meune";
-                tab.Name = string.Format("tab{0}", controllerINIT);  // hier werden doppelt names erstellt das ist das problem ich weiß noch nicht wir ich es fix 
+                tab.Header = "Menue";
                 tab.HeaderTemplate = tabDynamic.FindResource("TabHeaderUdel") as DataTemplate;
                 tab.ContentTemplate = tabDynamic.FindResource("TabMenue") as DataTemplate;
             }
 
-            TextBox txt = new TextBox(); // add controls to tab item, this case I added just a textbox
-            txt.Name = "txt";
-
-            tab.Content = txt;
-
-            _tabItems.Insert(_tabItems.Count - 1, tab); // insert tab item right before the last (+) tab item
+            // insert tab item right before the last (+) tab item
+            _tabItems.Insert(_tabItems.Count - 1, tab); 
             
             return tab;
         }
         
-        /*
-        private void tabAdd_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-        // clear tab control binding
-            tabDynamic.DataContext = null;
-
-            TabItem tab = this.AddTabItem();
-    
-        // bind tab control
-            tabDynamic.DataContext = _tabItems;
-
-        // select newly added tab item
-            tabDynamic.SelectedItem = tab;
-        }
-
-           private void tab_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-           {
-               TabItem tab = sender as TabItem;
-  
-               TabProperty dlg = new TabProperty();
-   
-              // get existing header text
-              dlg.txtTitle.Text = tab.Header.ToString();
-  
-              if (dlg.ShowDialog() == true)
-              {
-                  // change header text
-                  tab.Header = dlg.txtTitle.Text.Trim();
-        }*/
-
         private void tabDynamic_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             TabItem tab = (sender as TabControl).SelectedItem as TabItem;
@@ -140,7 +111,7 @@ namespace PTZ_Comander
 
             if (tab.Equals(_tabAdd))
             {
-                if (settings[0].Controller.Count <= _tabItems.Count-1)
+                if (settings[0].Controller.Count <= _tabItems.Count-1) // detects if there are no settings
                     CreateNewController();
 
                 (sender as TabControl).DataContext = null;// clear tab control binding
@@ -153,17 +124,17 @@ namespace PTZ_Comander
             }
             else
             {
+                // Calculate the controller Index 
                 controllerNR = _tabItems.IndexOf(tab);
                 if(controllerNR != 0)
                     controllerNR = _tabItems.IndexOf(tab)-1;
 
-                tally_Update();
+                Update();
             }
         }
 
         private void Cam_Changed(object sender, SelectionChangedEventArgs e)
         {
-            //Console.WriteLine("tabchage");
             int tabNR = (sender as TabControl).SelectedIndex;
 
             if ((sender as TabControl).SelectedItem as TabItem == null) return;
@@ -173,9 +144,9 @@ namespace PTZ_Comander
             if (camNR != 0)
                 camNR = tabNR - 1;
 
-            tally_Update();
-            //Console.WriteLine($"Tab ID: {(sender as TabControl).SelectedIndex.ToString()}");
-            //Console.WriteLine($"cam NR {camNR}");
+            Update();
+
+            Console.WriteLine($"cam NR {camNR}");
         }
 
         private void btnDelete_Click(object sender, RoutedEventArgs e)
@@ -218,22 +189,38 @@ namespace PTZ_Comander
             }
         }
 
-        private void tally_Update()
+        private void Update()
         {
+            //catch Errors if no settings are avalebile
             if(settings[0].Controller.Count == 0 )
                 return;
-            //Console.WriteLine(_Tally.Collor.ToString());
-            _Tally.Collor = Brushes.White;
+            // set collors for talli light
+            _Binding.TallyCollor = Brushes.White;
             if (settings[0].Controller[controllerNR].Cams[camNR].Tally)
-                _Tally.Collor = Brushes.PaleVioletRed;
-            //Console.WriteLine(_Tally.Collor.ToString());
+                _Binding.TallyCollor = Brushes.PaleVioletRed;
+
+            // set other values
+            _Binding.ContrName = settings[0].Controller[controllerNR].Name;
+            _Binding.ContrIP = settings[0].Controller[controllerNR].Ip;
+            _Binding.GenA = settings[0].GeneralSettings.a.ToString();
+
+        }
+
+        private void textChangedEventHandler(object sender, TextChangedEventArgs args)
+        {
+            settings[0].Controller[controllerNR].Name = _Binding.ContrName;
+            settings[0].Controller[controllerNR].Ip = _Binding.ContrIP;
+            settings[0].GeneralSettings.a = int.Parse(_Binding.GenA);
         }
 
         private void tally_Click(object sender, RoutedEventArgs e)
         {
+            // update the settings
             (settings[0].Controller[controllerNR].Cams[camNR].Tally) = !(settings[0].Controller[controllerNR].Cams[camNR].Tally);
-            tally_Update();
-            Console.WriteLine("ComToCam: tally switch");
+            
+            Update();
+
+            Console.WriteLine($"ComToCam: tally switch on controller {controllerNR} cam {camNR} to the value {settings[0].Controller[controllerNR].Cams[camNR].Tally}");
         }
 
         public void LoadJson()
@@ -247,7 +234,7 @@ namespace PTZ_Comander
 
         public void SaveJson()
         {
-            string json = JsonConvert.SerializeObject(settings);
+            string json = JsonConvert.SerializeObject(settings,Formatting.Indented);
             File.WriteAllText("file.json", json);
             Console.WriteLine("Saved Json to file!");
         }
@@ -261,15 +248,10 @@ namespace PTZ_Comander
                 helper = JsonConvert.DeserializeObject<List<Controller>>(json);
                 IList h = (IList)helper;
                 settings[0].Controller.Add((Controller)h[0]);
-
             }
         }
     }
 
-    public class Tally
-    {
-        public SolidColorBrush Collor { get; set; }
-    }
     public class GeneralSettings
     {
         public int LastViewed { get; set; }
@@ -300,25 +282,104 @@ namespace PTZ_Comander
         public GeneralSettings GeneralSettings { get; set; }
         public IList<Controller> Controller { get; set; }
     }
+
+
+    public class DataBinding : INotifyPropertyChanged
+    {
+
+        private SolidColorBrush _TallyCollor;
+        public SolidColorBrush TallyCollor
+        {
+            get { return _TallyCollor; }
+            set
+            {
+                _TallyCollor = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private String _ContrIP;
+        public String ContrIP
+        {
+            get { return _ContrIP; }
+            set
+            {
+                _ContrIP = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private String _ContrName;
+        public String ContrName
+        {
+            get { return _ContrName; }
+            set
+            {
+                _ContrName = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private String _GenA;
+        public String GenA
+        {
+            get { return _GenA; }
+            set
+            {
+                _GenA = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+
+
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+        {
+            var handler = PropertyChanged;
+            if (handler != null)
+                handler(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
 }
-
-
 
 /*
  TODO:
 
+- X [5] Fix Binding
 - X [9] Template updating
--   [3] tally push binding update
--   [7] subtabs updating
+- X [3] tally push binding update
+- X [7] subtabs updating
 - X [3] tab create dublicate error fix
 - X [5] master settings
--   [1] Content for settings
+- X [1] Content for settings
 - X [2] save to Json
 - X [5] tab cloning / fake cloning 
 - X [2] catch if json not long enave
--   [3] remov controller from json
+- X [3] remov controller from json
 - X [2] autospawn tabs
 - X [2] Fix json delete
 
+-   [ ] Controlls get Status 
+
+Controlls:
+-   [ ] Tally Blink
+-   [ ] Gamma
+-   [ ] Flip / Mirror
+-   [ ] White ballance
+-   [ ] Beleuchtung
+-   [ ] Iris
+-   [ ] Gain
+-   [ ] Backlight
+-   [ ] MM_Detect
+-   [ ] Best View
+
+
+
+Visca:
+-   [5] add coms mqttnet
+-   [2] Discover Cams
 
  */

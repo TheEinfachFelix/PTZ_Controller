@@ -37,7 +37,7 @@
                     </Button>
                     <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType={x:Type TabItem}}, Path=Header}" />
                 </DockPanel>
-                
+
             </DataTemplate>
 
             <!-- ______________ Header for menu ______________ -->
@@ -51,36 +51,55 @@
             <!-- ______________ General Settings ______________ -->
             <DataTemplate x:Key="TabMenue" DataType="TabItem">
                 <Grid>
-
-                    <Button>menueee</Button>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBox Text="{Binding GenA , UpdateSourceTrigger=PropertyChanged}" TextChanged="textChangedEventHandler"></TextBox>
 
                 </Grid>
             </DataTemplate>
 
             <!-- ______________ Cam Stuff ______________ -->
             <DataTemplate x:Key="TabContend" DataType="TabItem">
-                <TabControl SelectionChanged="Cam_Changed" >
+                <TabControl SelectionChanged="Cam_Changed">
                     <TabControl.Resources>
-                        <DataTemplate x:Key="TabControllerMenue" DataType="TabItem">
-                            <Grid>
-                                <Button>TabControllerMenue</Button>
+                        <!-- ______________ Cam Settings ______________ -->
+                        <DataTemplate x:Key="TabControllerMenue" DataType="TabItem " >
+                            <Grid VerticalAlignment="Top" HorizontalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <Label Grid.Row="0" Grid.Column="0">Name</Label>
+                                <TextBox Text="{Binding ContrName , UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="1" MinWidth="50" TextChanged="textChangedEventHandler"></TextBox>
+                                <Label Grid.Row="1" Grid.Column="0">IP</Label>
+                                <TextBox Text="{Binding ContrIP , UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="1" MinWidth="50" TextChanged="textChangedEventHandler"></TextBox>
                             </Grid>
                         </DataTemplate>
-
+                        <!-- ______________ Cam Controlls ______________ -->
                         <DataTemplate x:Key="TabCam" DataType="TabItem">
                             <Grid>
-                                <Button x:Name="tally" Click="tally_Click"  Background="{Binding Collor, Mode=TwoWay}"
-                        CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type TabItem}}, Path=Name}" 
+                                <Button x:Name="tally" Click="tally_Click"  Background="{Binding TallyCollor, UpdateSourceTrigger=PropertyChanged}"
                         Height="25" Width="50" Template="{StaticResource NoMouseOverButtonTemplate}">tally</Button>
                             </Grid>
                         </DataTemplate>
 
                     </TabControl.Resources>
-                    <TabItem Header="Settings" ContentTemplate="{StaticResource TabControllerMenue}"/>
-                    <TabItem Header="Cam 1"  ContentTemplate="{StaticResource TabCam}"/>
-                    <TabItem Header="Cam2 " ContentTemplate="{StaticResource TabCam}"/>
-                    <TabItem Header="Cam3 " ContentTemplate="{StaticResource TabCam}"/>
-                    <TabItem Header="Cam4 " ContentTemplate="{StaticResource TabCam}"/>
+                    <TabItem Header="Settings" ContentTemplate="{StaticResource TabControllerMenue}" Content="{Binding}"/>
+                    <TabItem Header="Cam 1"  ContentTemplate="{StaticResource TabCam}" Content="{Binding}"/>
+                    <TabItem Header="Cam2 " ContentTemplate="{StaticResource TabCam}" Content="{Binding}"/>
+                    <TabItem Header="Cam3 " ContentTemplate="{StaticResource TabCam}" Content="{Binding}"/>
+                    <TabItem Header="Cam4 " ContentTemplate="{StaticResource TabCam}" Content="{Binding}"/>
                 </TabControl>
             </DataTemplate>
 
@@ -91,12 +110,9 @@
                 <Setter Property="AcceptsReturn" Value="True"></Setter>
                 <Setter Property="TextWrapping" Value="WrapWithOverflow"></Setter>
                 <Setter Property="MaxLines" Value="5000"></Setter>
-                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" 
-             Value="Auto"></Setter>
-                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" 
-             Value="Auto"></Setter>
+                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"></Setter>
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"></Setter>
             </Style>
         </TabControl.Resources>
     </TabControl>
-
 </Window>
