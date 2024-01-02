@@ -2,15 +2,15 @@
 
 ## General Informations
 
-This Repo contains a controll panel for the [viscaESP pcb](https://git.ccmob.net/delta/software/visca-esp). The pcb was made for visca PTZ cameras and can be controlled via MQTT. 
+This Repo contains a control panel for the [viscaESP pcb](https://git.ccmob.net/delta/software/visca-esp). The pcb was made for visca PTZ cameras and can be controlled via MQTT. 
 
 ## Features
-- controll upto 4 Cameras
-- controll multible Controller
+- controll upto 4 cameras
+- controll multible controller
 
 ## Features TODO
 
-- [ ] Game pad Controll
+- [ ] Game pad controll
 - [ ] input via Serial
-- [ ] controll via GUI
+- [ ] control via GUI
 - [ ]
