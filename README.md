@@ -10,7 +10,7 @@ This Repo contains a controll panel for the [viscaESP pcb](https://git.ccmob.net
 
 ## Features TODO
 
-- [] Game pad Controll
-- [] input via Serial
-- [] controll via GUI
-- 
+- [ ] Game pad Controll
+- [ ] input via Serial
+- [ ] controll via GUI
+- [ ]
