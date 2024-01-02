@@ -1,6 +1,6 @@
 # PTZ_Controller
 
-## Genereal Informations
+## General Informations
 
 This Repo contains a controll panel for the [viscaESP pcb](https://git.ccmob.net/delta/software/visca-esp). The pcb was made for visca PTZ cameras and can be controlled via MQTT. 
 
