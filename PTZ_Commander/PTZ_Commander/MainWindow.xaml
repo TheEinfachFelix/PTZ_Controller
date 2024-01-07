@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PTZ_Comander"
         mc:Ignorable="d"
-        Title="PTZ-Commander" Height="450" Width="800">
+        Title="PTZ-Commander" Height="550" Width="1100">
 
     
     <Window.Resources>
@@ -59,7 +59,7 @@
                         <RowDefinition/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <TextBox Text="{Binding GenA , UpdateSourceTrigger=PropertyChanged}" TextChanged="textChangedEventHandler"></TextBox>
+                    <TextBox Text="{Binding GenA , UpdateSourceTrigger=PropertyChanged}"></TextBox>
 
                 </Grid>
             </DataTemplate>
@@ -81,19 +81,160 @@
                                     <RowDefinition />
                                 </Grid.RowDefinitions>
                                 <Label Grid.Row="0" Grid.Column="0">Name</Label>
-                                <TextBox Text="{Binding ContrName , UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="1" MinWidth="50" TextChanged="textChangedEventHandler"></TextBox>
+                                <TextBox Text="{Binding ContrName , UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="1" MinWidth="50"></TextBox>
                                 <Label Grid.Row="1" Grid.Column="0">IP</Label>
-                                <TextBox Text="{Binding ContrIP , UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="1" MinWidth="50" TextChanged="textChangedEventHandler"></TextBox>
+                                <TextBox Text="{Binding ContrIP , UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="1" MinWidth="50"></TextBox>
                             </Grid>
+                            
+                            
                         </DataTemplate>
                         <!-- ______________ Cam Controlls ______________ -->
                         <DataTemplate x:Key="TabCam" DataType="TabItem">
-                            <Grid>
-                                <Button x:Name="tally" Click="tally_Click"  Background="{Binding TallyCollor, UpdateSourceTrigger=PropertyChanged}"
-                        Height="25" Width="50" Template="{StaticResource NoMouseOverButtonTemplate}">tally</Button>
-                            </Grid>
-                        </DataTemplate>
+                            <DockPanel>
+                                <!-- ______________ Sidebar ______________ -->
+                                <StackPanel DockPanel.Dock="Left">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="90"/>
+                                        </Grid.ColumnDefinitions>
 
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Label Grid.Row="0" Grid.Column="0">Kamera Name:</Label>
+                                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Cam_Name , UpdateSourceTrigger=PropertyChanged}" TextChanged="Cam_Position_Change"></TextBox>
+                                        <Label Grid.Row="1" Grid.Column="0">Kamera Position X:</Label>
+                                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Cam_Pos_X , UpdateSourceTrigger=PropertyChanged}" TextChanged="Cam_Position_Change"></TextBox>
+                                        <Label Grid.Row="2" Grid.Column="0">Kamera Position Y:</Label>
+                                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Cam_Pos_Y , UpdateSourceTrigger=PropertyChanged}" TextChanged="Cam_Position_Change"></TextBox>
+                                        <Label Grid.Row="3" Grid.Column="0">Kamera Speed X:</Label>
+                                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Cam_Input_Speed_X , UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                                        <Label Grid.Row="4" Grid.Column="0">Kamera Speed Y:</Label>
+                                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Cam_Input_Speed_Y , UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                                        <Label Grid.Row="5" Grid.Column="0">Zoom:</Label>
+                                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Cam_Zoom , UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                                        <Label Grid.Row="6" Grid.Column="0">Zoom:</Label>
+                                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Cam_Fokus , UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                                        <Button Grid.Row="7" Grid.Column="1" Content="Tally" Background="{Binding Cam_Tally_Collor}" Click="Cam_Tally_Click" Template="{StaticResource NoMouseOverButtonTemplate}"/>
+                                        <Button Grid.Row="7" Grid.Column="0" Content="Tally Blink" Background="{Binding Cam_Tally_Blink_Collor}" Click="Cam_Blink_Tally_Click" Template="{StaticResource NoMouseOverButtonTemplate}"/>
+                                    </Grid>
+                                </StackPanel>
+                                <!-- ______________ Zoom Focus ______________ -->
+                                <Grid DockPanel.Dock="Bottom">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="50"></ColumnDefinition>
+                                        <ColumnDefinition Width="50"></ColumnDefinition>
+                                        <ColumnDefinition></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="25"></RowDefinition>
+                                        <RowDefinition Height="25"></RowDefinition>
+                                    </Grid.RowDefinitions>
+
+                                    <Button Grid.Column="0" Grid.RowSpan="2" Padding="10" Background="CornflowerBlue">AF</Button>
+                                    <TextBlock Grid.Column="1" Grid.Row="0" Padding="4">Zoom</TextBlock>
+                                    <TextBlock Grid.Column="1" Grid.Row="1" Padding="4">Fokus</TextBlock>
+                                    <Slider Grid.Column="2" Grid.Row="0" Maximum="2885" TickPlacement="BottomRight" TickFrequency="5" Value="{Binding Cam_Zoom , UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Slider Grid.Column="2" Grid.Row="1" Maximum="100" TickPlacement="BottomRight" Value="{Binding Cam_Fokus , UpdateSourceTrigger=PropertyChanged}" />
+                                </Grid>
+                                <!-- ______________ Cam Inputs ______________ -->
+                                <Canvas MouseLeftButtonUp="Cam_Input_MotionEye_Mouse_Move" x:Name="main" DockPanel.Dock="Top">
+                                    <!-- ______________ JoyStick ______________ -->
+                                    <Canvas Grid.Column="0" Grid.Row="0">
+                                        <Ellipse Fill="#FFF4F4F5" Name ="Joystick" Stroke="Black"
+                                                 Height="{Binding Cam_Input_Joystick_Size}" Width="{Binding Cam_Input_Joystick_Size}" 
+                                                 Canvas.Left="{Binding Cam_Input_Window_Stick_Left}" Canvas.Top="{Binding Cam_Input_Window_Stick_Top}"
+                                                 MouseLeftButtonDown="Cam_Input_Joystick_Mouse_Move" MouseMove="Cam_Input_Joystick_Mouse_Move" />
+                                        <Ellipse Fill="red" Name="Stick" Stroke="Black"
+                                                 Height="{Binding Cam_Input_Stick_Size}" Width="{Binding Cam_Input_Stick_Size}" 
+                                                 Canvas.Left="{Binding Cam_Input_Stick_Left}"  Canvas.Top="{Binding Cam_Input_Stick_Top}"   
+                                                 MouseLeftButtonDown="Cam_Input_Joystick_Mouse_Move" MouseMove="Cam_Input_Joystick_Mouse_Move" />
+                                    </Canvas>
+                                    <!-- ______________ MotionEye ______________ -->
+                                    <Canvas Grid.Column="0" Grid.Row="0">
+                                        <Rectangle Fill="#FFF4F4F5" Name ="MotionEye" Stroke="Black"
+                                                   Height="{Binding Cam_Input_MoEye_Y}" Width="{Binding Cam_Input_MoEye_X}"
+                                                   Canvas.Left="{Binding Cam_Input_Window_Eye_Left}" Canvas.Top="{Binding Cam_Input_Window_Eye_Top}"  
+                                                   MouseMove="Cam_Input_MotionEye_Mouse_Move" MouseLeftButtonDown="Cam_Input_MotionEye_Mouse_Move"/>
+                                        <Ellipse   Fill="red" Name="Eye" Stroke="Black"
+                                                   Height="{Binding Cam_Input_Eye_Size}" Width="{Binding Cam_Input_Eye_Size}"
+                                                   Canvas.Left="{Binding Cam_Input_Eye_Left}"  Canvas.Top="{Binding Cam_Input_Eye_Top}"  
+                                                   MouseMove="Cam_Input_MotionEye_Mouse_Move" MouseLeftButtonDown="Cam_Input_MotionEye_Mouse_Move"/>
+                                    </Canvas>
+                                    <!-- ______________ Step Step ______________ -->
+                                    <Canvas Margin="190,10,10,40" Grid.Row="1">
+                                        <Grid Height="140" Width="140" Canvas.Left="20" Canvas.Top="{Binding Cam_Input_Window_Stick_Top}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+
+                                            </Grid.RowDefinitions>
+
+                                            <Button Grid.Row="0" Grid.Column="3" Click="Cam_Button_Step" Name="UU10">10</Button>
+                                            <Button Grid.Row="1" Grid.Column="3" Click="Cam_Button_Step" Name="UU5">5</Button>
+                                            <Button Grid.Row="2" Grid.Column="3" Click="Cam_Button_Step" Name="UU1">1</Button>
+
+                                            <Button Grid.Row="0" Grid.Column="6" Click="Cam_Button_Step" Name="UR10">10</Button>
+                                            <Button Grid.Row="1" Grid.Column="5" Click="Cam_Button_Step" Name="UR5">5</Button>
+                                            <Button Grid.Row="2" Grid.Column="4" Click="Cam_Button_Step" Name="UR1">1</Button>
+
+
+                                            <Button Grid.Row="3" Grid.Column="0" Click="Cam_Button_Step" Name="LL10">10</Button>
+                                            <Button Grid.Row="3" Grid.Column="1" Click="Cam_Button_Step" Name="LL5">5</Button>
+                                            <Button Grid.Row="3" Grid.Column="2" Click="Cam_Button_Step" Name="LL1">1</Button>
+
+                                            <Button Grid.Row="0" Grid.Column="0" Click="Cam_Button_Step" Name="LU10">10</Button>
+                                            <Button Grid.Row="1" Grid.Column="1" Click="Cam_Button_Step" Name="LU5">5</Button>
+                                            <Button Grid.Row="2" Grid.Column="2" Click="Cam_Button_Step" Name="LU1">1</Button>
+
+
+                                            <Button Grid.Row="3" Grid.Column="4" Click="Cam_Button_Step" Name="RR10">1</Button>
+                                            <Button Grid.Row="3" Grid.Column="5" Click="Cam_Button_Step" Name="RR5">5</Button>
+                                            <Button Grid.Row="3" Grid.Column="6" Click="Cam_Button_Step" Name="RR1">10</Button>
+
+                                            <Button Grid.Row="4" Grid.Column="4" Click="Cam_Button_Step" Name="RD10">1</Button>
+                                            <Button Grid.Row="5" Grid.Column="5" Click="Cam_Button_Step" Name="RD5">5</Button>
+                                            <Button Grid.Row="6" Grid.Column="6" Click="Cam_Button_Step" Name="RD1">10</Button>
+
+
+                                            <Button Grid.Row="4" Grid.Column="3" Click="Cam_Button_Step" Name="DD10">1</Button>
+                                            <Button Grid.Row="5" Grid.Column="3" Click="Cam_Button_Step" Name="DD5">5</Button>
+                                            <Button Grid.Row="6" Grid.Column="3" Click="Cam_Button_Step" Name="DD1">10</Button>
+
+                                            <Button Grid.Row="4" Grid.Column="2" Click="Cam_Button_Step" Name="DL10">1</Button>
+                                            <Button Grid.Row="5" Grid.Column="1" Click="Cam_Button_Step" Name="DL5">5</Button>
+                                            <Button Grid.Row="6" Grid.Column="0" Click="Cam_Button_Step" Name="DL1">10</Button>
+                                        </Grid>
+                                    </Canvas>
+                                </Canvas>
+                            </DockPanel>
+                        </DataTemplate>
                     </TabControl.Resources>
                     <TabItem Header="Settings" ContentTemplate="{StaticResource TabControllerMenue}" Content="{Binding}"/>
                     <TabItem Header="Cam 1"  ContentTemplate="{StaticResource TabCam}" Content="{Binding}"/>

@@ -31,13 +31,41 @@ namespace PTZ_Comander
         int controllerNR = 0;
         int camNR = 0;
         int controllerINIT = 0;
+        Vector Cam_Input_Defauld_Offset = new Vector(205,-54);
+        Vector m_Cam_Input_Stick_Pos = new Vector();
 
         DataBinding _Binding = new DataBinding()
         {
             TallyCollor = Brushes.Black,
             ContrName = "not Loaded",
             ContrIP = "not Loaded",
-            GenA = "0"
+            GenA = "0",
+
+
+            Cam_Name = "Diese cam",
+
+            Cam_Input_MoEye_X = 816, //With
+            Cam_Input_MoEye_Y = 212, //Hight
+            Cam_Input_Joystick_Size = 140,
+
+            Cam_Input_Stick_Size = 80,
+            Cam_Input_Eye_Size = 15,
+
+            Cam_Input_Window_Stick_Left = 20,
+            Cam_Input_Window_Stick_Top = 250,
+            Cam_Input_Window_Eye_Left = 20,
+            Cam_Input_Window_Eye_Top = 20,
+
+            Cam_Input_Speed_X = 8,
+            Cam_Input_Speed_Y = 8,
+            Cam_Pos_X = 0,
+            Cam_Pos_Y = 0,
+
+            Cam_Zoom = 0,
+            Cam_Fokus = 0,
+
+            Cam_Tally_Collor = Brushes.White,
+            Cam_Tally_Blink_Collor = Brushes.White
 
         };
 
@@ -66,6 +94,9 @@ namespace PTZ_Comander
                 {
                     this.AddTabItem();
                 }
+                // set cam input positions
+                Reset_Stick_Position();
+                Update_Eye_Position();
             }
             catch (Exception ex)
             {
@@ -75,6 +106,7 @@ namespace PTZ_Comander
 
         ~MainWindow()
         {
+            Store();
             SaveJson();
         }
 
@@ -104,51 +136,6 @@ namespace PTZ_Comander
             return tab;
         }
         
-        private void tabDynamic_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            TabItem tab = (sender as TabControl).SelectedItem as TabItem;
-            if (tab == null) return;
-
-            if (tab.Equals(_tabAdd))
-            {
-                if (settings[0].Controller.Count <= _tabItems.Count-1) // detects if there are no settings
-                    CreateNewController();
-
-                (sender as TabControl).DataContext = null;// clear tab control binding
-
-                TabItem newTab = this.AddTabItem();// bind tab control
-
-                (sender as TabControl).DataContext = _tabItems;
-
-                (sender as TabControl).SelectedItem = newTab;// select newly added tab item
-            }
-            else
-            {
-                // Calculate the controller Index 
-                controllerNR = _tabItems.IndexOf(tab);
-                if(controllerNR != 0)
-                    controllerNR = _tabItems.IndexOf(tab)-1;
-
-                Update();
-            }
-        }
-
-        private void Cam_Changed(object sender, SelectionChangedEventArgs e)
-        {
-            int tabNR = (sender as TabControl).SelectedIndex;
-
-            if ((sender as TabControl).SelectedItem as TabItem == null) return;
-
-            //////////////// Update Cam NR ////////////////
-            camNR = tabNR;
-            if (camNR != 0)
-                camNR = tabNR - 1;
-
-            Update();
-
-            Console.WriteLine($"cam NR {camNR}");
-        }
-
         private void btnDelete_Click(object sender, RoutedEventArgs e)
         {
             try{
@@ -189,40 +176,272 @@ namespace PTZ_Comander
             }
         }
 
+        /////////////////////////// Tab Change
+        private void tabDynamic_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Store();
+
+            TabItem tab = (sender as TabControl).SelectedItem as TabItem;
+            if (tab == null) return;
+
+            if (tab.Equals(_tabAdd))
+            {
+                if (settings[0].Controller.Count <= _tabItems.Count-1) // detects if there are no settings
+                    CreateNewController();
+
+                (sender as TabControl).DataContext = null;// clear tab control binding
+
+                TabItem newTab = this.AddTabItem();// bind tab control
+
+                (sender as TabControl).DataContext = _tabItems;
+
+                (sender as TabControl).SelectedItem = newTab;// select newly added tab item
+            }
+            else
+            {
+                // Calculate the controller Index 
+                controllerNR = _tabItems.IndexOf(tab);
+                if(controllerNR != 0)
+                    controllerNR = _tabItems.IndexOf(tab)-1;
+
+                Update();
+            }
+        }
+
+        private void Cam_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            Store();
+
+            int tabNR = (sender as TabControl).SelectedIndex;
+
+            if ((sender as TabControl).SelectedItem as TabItem == null) return;
+
+            //////////////// Update Cam NR ////////////////
+            camNR = tabNR;
+            if (camNR != 0)
+                camNR = tabNR - 1;
+
+            Update();
+
+            Console.WriteLine($"cam NR {camNR}");
+        }
+
+        /// Diese Funktion braucht updates vom Json
         private void Update()
         {
             //catch Errors if no settings are avalebile
             if(settings[0].Controller.Count == 0 )
                 return;
-            // set collors for talli light
-            _Binding.TallyCollor = Brushes.White;
-            if (settings[0].Controller[controllerNR].Cams[camNR].Tally)
-                _Binding.TallyCollor = Brushes.PaleVioletRed;
 
-            // set other values
-            _Binding.ContrName = settings[0].Controller[controllerNR].Name;
-            _Binding.ContrIP = settings[0].Controller[controllerNR].Ip;
+            Controller TheController = settings[0].Controller[controllerNR];
+            Cam TheCam = TheController.Cams[camNR];
+
+            /////////////////// set collors for talli light
+            Cam_Tally_Update_Collors();
+
+            ///////////////// set Bindings
+            _Binding.ContrName = TheController.Name;
+            _Binding.ContrIP = TheController.Ip;
             _Binding.GenA = settings[0].GeneralSettings.a.ToString();
+            ////////////////
 
+            _Binding.Cam_Name = TheCam.Name;
+
+            _Binding.Cam_Input_Speed_X = TheCam.Speed_X;
+            _Binding.Cam_Input_Speed_Y = TheCam.Speed_Y;
+            _Binding.Cam_Pos_X = TheCam.X;
+            _Binding.Cam_Pos_Y = TheCam.Y;
+
+            _Binding.Cam_Zoom = TheCam.Zoom;
+            _Binding.Cam_Fokus = TheCam.Focus;
         }
 
-        private void textChangedEventHandler(object sender, TextChangedEventArgs args)
+        /// Diese Funktion braucht updates vom Json
+        private void Store()
         {
-            settings[0].Controller[controllerNR].Name = _Binding.ContrName;
-            settings[0].Controller[controllerNR].Ip = _Binding.ContrIP;
+            //catch Errors if no settings are avalebile
+            if (settings[0].Controller.Count == 0)
+                return;
+
+            Controller TheController = settings[0].Controller[controllerNR];
+            Cam TheCam = TheController.Cams[camNR];
+
+            ///////////////// store Bindings
+            TheController.Name = _Binding.ContrName;
+            TheController.Ip = _Binding.ContrIP;
             settings[0].GeneralSettings.a = int.Parse(_Binding.GenA);
+            ////////////////
+
+            TheCam.Name = _Binding.Cam_Name;
+
+            TheCam.Speed_X = (int)_Binding.Cam_Input_Speed_X;
+            TheCam.Speed_Y = (int)_Binding.Cam_Input_Speed_Y;
+            TheCam.X = (int)_Binding.Cam_Pos_X;
+            TheCam.Y = (int)_Binding.Cam_Pos_Y;
+
+            TheCam.Zoom  = _Binding.Cam_Zoom;
+            TheCam.Focus = _Binding.Cam_Fokus;
         }
 
-        private void tally_Click(object sender, RoutedEventArgs e)
+        //////////////////////////// Cam Input
+
+        private void Cam_Tally_Click(object sender, RoutedEventArgs e)
         {
-            // update the settings
-            (settings[0].Controller[controllerNR].Cams[camNR].Tally) = !(settings[0].Controller[controllerNR].Cams[camNR].Tally);
-            
-            Update();
-
-            Console.WriteLine($"ComToCam: tally switch on controller {controllerNR} cam {camNR} to the value {settings[0].Controller[controllerNR].Cams[camNR].Tally}");
+            //Console.WriteLine("ComToCam: tally switch");
+            settings[0].Controller[controllerNR].Cams[camNR].Tally = !settings[0].Controller[controllerNR].Cams[camNR].Tally;
+            Cam_Tally_Update_Collors();
         }
 
+        // This Function need it own json entry
+        private void Cam_Blink_Tally_Click(object sender, RoutedEventArgs e)
+        {
+            //Console.WriteLine("ComToCam: tally switch");
+            settings[0].Controller[controllerNR].Cams[camNR].Tally_Blink = !settings[0].Controller[controllerNR].Cams[camNR].Tally_Blink;
+            Cam_Tally_Update_Collors();
+        }
+
+        private void Cam_Tally_Update_Collors() 
+        {
+            Controller TheController = settings[0].Controller[controllerNR];
+            Cam TheCam = TheController.Cams[camNR];
+
+            _Binding.Cam_Tally_Collor = Brushes.White;
+            if (TheCam.Tally)
+                _Binding.Cam_Tally_Collor = Brushes.PaleVioletRed;
+
+            _Binding.Cam_Tally_Blink_Collor = Brushes.White;
+            if (TheCam.Tally_Blink)
+                _Binding.Cam_Tally_Blink_Collor = Brushes.PaleVioletRed;
+        }
+
+        private void Cam_Input_Joystick_Mouse_Move(object sender, MouseEventArgs e)
+        {
+            double StickWindowCenter = _Binding.Cam_Input_Joystick_Size * 0.5; //With
+
+            Vector Cam_Input_Stick_Pos = e.GetPosition(tabDynamic) - new Point(_Binding.Cam_Input_Window_Stick_Left, _Binding.Cam_Input_Window_Stick_Top)
+                                         - new Vector(StickWindowCenter, StickWindowCenter);
+            //Tab Offset
+            Cam_Input_Stick_Pos.X -= Cam_Input_Defauld_Offset.X;
+            Cam_Input_Stick_Pos.Y += Cam_Input_Defauld_Offset.Y;
+
+            //Normalize coords
+            Cam_Input_Stick_Pos /= StickWindowCenter;
+
+            if (Cam_Input_Stick_Pos.Length > 1.0)
+                Cam_Input_Stick_Pos.Normalize();
+
+            //Console.WriteLine($"Distance {Cam_Input_Knob_Pos.Length} Angle {Math.Atan2(Cam_Input_Knob_Pos.Y, Cam_Input_Knob_Pos.X)}");
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                _Binding.Cam_Pos_X +=  Cam_Input_Stick_Pos.X       * (_Binding.Cam_Input_Speed_X / 8); //calc cam pos
+                _Binding.Cam_Pos_Y += (Cam_Input_Stick_Pos.Y * -1) * (_Binding.Cam_Input_Speed_Y / 8);
+                m_Cam_Input_Stick_Pos = Cam_Input_Stick_Pos; // set value to stick pos
+
+                Update_Stick_Position();
+                Update_Eye_Position();
+            }
+            else
+            {
+                Reset_Stick_Position();
+            }
+        }
+
+        void Update_Stick_Position()
+        {
+            double fKnobRadius = _Binding.Cam_Input_Stick_Size * 0.5;
+            double StickWindowCenter = _Binding.Cam_Input_Joystick_Size * 0.5;
+
+            _Binding.Cam_Input_Stick_Left = _Binding.Cam_Input_Window_Stick_Left + m_Cam_Input_Stick_Pos.X * StickWindowCenter + StickWindowCenter - fKnobRadius;
+            _Binding.Cam_Input_Stick_Top  = _Binding.Cam_Input_Window_Stick_Top  + m_Cam_Input_Stick_Pos.Y * StickWindowCenter + StickWindowCenter - fKnobRadius;
+        }
+
+        void Reset_Stick_Position()
+        {
+            double fKnobRadius = _Binding.Cam_Input_Stick_Size * 0.5;
+            double StickWindowCenter = _Binding.Cam_Input_Joystick_Size * 0.5;
+
+            _Binding.Cam_Input_Stick_Left = _Binding.Cam_Input_Window_Stick_Left + StickWindowCenter - fKnobRadius;
+            _Binding.Cam_Input_Stick_Top = _Binding.Cam_Input_Window_Stick_Top + StickWindowCenter - fKnobRadius;
+        }
+
+        private void Cam_Input_MotionEye_Mouse_Move(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                _Binding.Cam_Pos_X = e.GetPosition(tabDynamic).X - _Binding.Cam_Input_Window_Eye_Left                             - Cam_Input_Defauld_Offset.X;
+                _Binding.Cam_Pos_Y = _Binding.Cam_Input_Window_Eye_Top + _Binding.Cam_Input_MoEye_Y - e.GetPosition(tabDynamic).Y - Cam_Input_Defauld_Offset.Y;
+                Update_Eye_Position();
+
+            }
+        }
+
+        public void Update_Eye_Position()
+        {
+            if (_Binding.Cam_Pos_X < 0)  // Links
+                _Binding.Cam_Pos_X = 0;
+            if (_Binding.Cam_Pos_X > _Binding.Cam_Input_MoEye_X)  // Right
+                _Binding.Cam_Pos_X = _Binding.Cam_Input_MoEye_X;
+            if (_Binding.Cam_Pos_Y < 0)  // Oben
+                _Binding.Cam_Pos_Y = 0;
+            if (_Binding.Cam_Pos_Y > _Binding.Cam_Input_MoEye_Y)  // Unten
+                _Binding.Cam_Pos_Y = _Binding.Cam_Input_MoEye_Y;
+
+            double pOffset = _Binding.Cam_Input_Eye_Size * 0.5;
+            _Binding.Cam_Input_Eye_Left = _Binding.Cam_Input_Window_Eye_Left + _Binding.Cam_Pos_X - pOffset;
+            _Binding.Cam_Input_Eye_Top = _Binding.Cam_Input_Window_Eye_Top + _Binding.Cam_Input_MoEye_Y - _Binding.Cam_Pos_Y - pOffset;
+        }
+
+        private void Cam_Button_Step(object sender, RoutedEventArgs e)
+        {
+            double Content = int.Parse((string)(sender as Button).Content) / 2 + 0.5;
+
+            switch ((sender as Button).Name.Substring(0, 1))
+            {
+                case "U": //hoch
+                    _Binding.Cam_Pos_Y += Content;
+                    break;
+
+                case "D": //Runter
+                    _Binding.Cam_Pos_Y -= Content;
+                    break;
+
+                case "L": //Links
+                    _Binding.Cam_Pos_X -= Content;
+                    break;
+
+                case "R": //Rechs
+                    _Binding.Cam_Pos_X += Content;
+                    break;
+            }
+
+            switch ((sender as Button).Name.Substring(1, 1))
+            {
+                case "U": //hoch
+                    _Binding.Cam_Pos_Y += Content;
+                    break;
+
+                case "D": //Runter
+                    _Binding.Cam_Pos_Y -= Content;
+                    break;
+
+                case "L": //Links
+                    _Binding.Cam_Pos_X -= Content;
+                    break;
+
+                case "R": //Rechs
+                    _Binding.Cam_Pos_X += Content;
+                    break;
+            }
+            Update_Eye_Position();
+        }
+
+        private void Cam_Position_Change(object sender, TextChangedEventArgs e)
+        {
+            Update_Eye_Position();
+        }
+
+
+        //////////////////////////// Json
         public void LoadJson()
         {
             using (StreamReader r = new StreamReader("file.json"))
@@ -263,10 +482,13 @@ namespace PTZ_Comander
     {
         public string Name { get; set; }
         public bool Tally { get; set; }
+        public bool Tally_Blink { get; set; }
         public int Zoom { get; set; }
         public int Focus { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
+        public int Speed_X { get; set; }
+        public int Speed_Y { get; set; }
     }
 
     public class Controller
@@ -331,7 +553,253 @@ namespace PTZ_Comander
             }
         }
 
+        private string _Cam_Name;
+        public string Cam_Name
+        {
+            get { return _Cam_Name; }
+            set
+            {
+                _Cam_Name = value;
+                NotifyPropertyChanged();
+            }
+        }
 
+        ////////////////////////////////////// Sizes of Fields //////////////////////////////////////
+        private double _Cam_Input_MoEye_X;
+        public double Cam_Input_MoEye_X
+        {
+            get { return _Cam_Input_MoEye_X; }
+            set
+            {
+                _Cam_Input_MoEye_X = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private double _Cam_Input_MoEye_Y;
+        public double Cam_Input_MoEye_Y
+        {
+            get { return _Cam_Input_MoEye_Y; }
+            set
+            {
+                _Cam_Input_MoEye_Y = value;
+                NotifyPropertyChanged();
+            }
+        }
+        //////////////////////////////////////
+        private double _Cam_Input_Joystick_Size;
+        public double Cam_Input_Joystick_Size
+        {
+            get { return _Cam_Input_Joystick_Size; }
+            set
+            {
+                _Cam_Input_Joystick_Size = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        ////////////////////////////////////// Size of Input //////////////////////////////////////
+        private double _Cam_Input_Stick_Size;
+        public double Cam_Input_Stick_Size
+        {
+            get { return _Cam_Input_Stick_Size; }
+            set
+            {
+                _Cam_Input_Stick_Size = value;
+                NotifyPropertyChanged();
+            }
+        }
+        //////////////////////////////////////
+        private double _Cam_Input_Eye_Size;
+        public double Cam_Input_Eye_Size
+        {
+            get { return _Cam_Input_Eye_Size; }
+            set
+            {
+                _Cam_Input_Eye_Size = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        ////////////////////////////////////// Position of Input //////////////////////////////////////
+        private double _Cam_Input_Stick_Left;
+        public double Cam_Input_Stick_Left
+        {
+            get { return _Cam_Input_Stick_Left; }
+            set
+            {
+                _Cam_Input_Stick_Left = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private double _Cam_Input_Stick_Top;
+        public double Cam_Input_Stick_Top
+        {
+            get { return _Cam_Input_Stick_Top; }
+            set
+            {
+                _Cam_Input_Stick_Top = value;
+                NotifyPropertyChanged();
+            }
+        }
+        //////////////////////////////////////
+
+        private double _Cam_Input_Eye_Left;
+        public double Cam_Input_Eye_Left
+        {
+            get { return _Cam_Input_Eye_Left; }
+            set
+            {
+                _Cam_Input_Eye_Left = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private double _Cam_Input_Eye_Top;
+        public double Cam_Input_Eye_Top
+        {
+            get { return _Cam_Input_Eye_Top; }
+            set
+            {
+                _Cam_Input_Eye_Top = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        ////////////////////////////////////// Position of Fields //////////////////////////////////////
+        private double _Cam_Input_Window_Stick_Left;
+        public double Cam_Input_Window_Stick_Left
+        {
+            get { return _Cam_Input_Window_Stick_Left; }
+            set
+            {
+                _Cam_Input_Window_Stick_Left = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private double _Cam_Input_Window_Stick_Top;
+        public double Cam_Input_Window_Stick_Top
+        {
+            get { return _Cam_Input_Window_Stick_Top; }
+            set
+            {
+                _Cam_Input_Window_Stick_Top = value;
+                NotifyPropertyChanged();
+            }
+        }
+        //////////////////////////////////////
+        private double _Cam_Input_Window_Eye_Left;
+        public double Cam_Input_Window_Eye_Left
+        {
+            get { return _Cam_Input_Window_Eye_Left; }
+            set
+            {
+                _Cam_Input_Window_Eye_Left = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private double _Cam_Input_Window_Eye_Top;
+        public double Cam_Input_Window_Eye_Top
+        {
+            get { return _Cam_Input_Window_Eye_Top; }
+            set
+            {
+                _Cam_Input_Window_Eye_Top = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        ////////////////////////////////////// Other //////////////////////////////////////
+        private double _Cam_Input_Speed_X;
+        public double Cam_Input_Speed_X
+        {
+            get { return _Cam_Input_Speed_X; }
+            set
+            {
+                _Cam_Input_Speed_X = value;
+                NotifyPropertyChanged();
+            }
+        }
+        
+        private double _Cam_Input_Speed_Y;
+        public double Cam_Input_Speed_Y
+        {
+            get { return _Cam_Input_Speed_Y; }
+            set
+            {
+                _Cam_Input_Speed_Y = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private double _Cam_Pos_X;
+        public double Cam_Pos_X
+        {
+            get { return _Cam_Pos_X; }
+            set
+            {
+                _Cam_Pos_X = Math.Round(value, 1);
+                NotifyPropertyChanged();
+            }
+        }
+
+        private double _Cam_Pos_Y;
+        public double Cam_Pos_Y
+        {
+            get { return _Cam_Pos_Y; }
+            set
+            {
+                _Cam_Pos_Y = Math.Round(value, 1);
+                NotifyPropertyChanged();
+            }
+        }
+        ////////////////////////////////////// Optics //////////////////////////////////////
+        private int _Cam_Zoom;
+        public int Cam_Zoom
+        {
+            get { return _Cam_Zoom; }
+            set
+            {
+                _Cam_Zoom = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private int _Cam_Fokus;
+        public int Cam_Fokus
+        {
+            get { return _Cam_Fokus; }
+            set
+            {
+                _Cam_Fokus = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private SolidColorBrush _Cam_Tally_Collor;
+        public SolidColorBrush Cam_Tally_Collor
+        {
+            get { return _Cam_Tally_Collor; }
+            set
+            {
+                _Cam_Tally_Collor = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private SolidColorBrush _Cam_Tally_Blink_Collor;
+        public SolidColorBrush Cam_Tally_Blink_Collor
+        {
+            get { return _Cam_Tally_Blink_Collor; }
+            set
+            {
+                _Cam_Tally_Blink_Collor = value;
+                NotifyPropertyChanged();
+            }
+        }
 
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -361,11 +829,13 @@ namespace PTZ_Comander
 - X [3] remov controller from json
 - X [2] autospawn tabs
 - X [2] Fix json delete
-
 -   [ ] Controlls get Status 
+- X [3] Auto Save Cam Settings
+-   [4] Motion EYE Hintergrundbild
+-   [3] Add json stuff
 
 Controlls:
--   [ ] Tally Blink
+-   [X] Tally Blink
 -   [ ] Gamma
 -   [ ] Flip / Mirror
 -   [ ] White ballance
