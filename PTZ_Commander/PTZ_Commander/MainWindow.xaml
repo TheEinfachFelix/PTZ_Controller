@@ -50,17 +50,29 @@
 
             <!-- ______________ General Settings ______________ -->
             <DataTemplate x:Key="TabMenue" DataType="TabItem">
-                <Grid>
+                <Grid VerticalAlignment="Top" HorizontalAlignment="Center">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
                         <ColumnDefinition/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition/>
-                        <RowDefinition/>
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
                     </Grid.RowDefinitions>
-                    <TextBox Text="{Binding GenA , UpdateSourceTrigger=PropertyChanged}"></TextBox>
-
+                    <Label Grid.Row="0" Grid.Column="0">GenA</Label>
+                    <TextBox Text="{Binding GenA , UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="1"></TextBox>
+                    <Label Grid.Row="1" Grid.Column="0">Discover Duration</Label>
+                    <TextBox Text="{Binding MQTT_Discover_Duration , UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="1" MinWidth="50"></TextBox>
+                    <Label Grid.Row="2" Grid.Column="0">Await Requ Duration</Label>
+                    <TextBox Text="{Binding MQTT_Await_Requ_Duration , UpdateSourceTrigger=PropertyChanged}" Grid.Row="2" Grid.Column="1" MinWidth="50"></TextBox>
                 </Grid>
             </DataTemplate>
 
@@ -79,11 +91,20 @@
                                     <RowDefinition />
                                     <RowDefinition />
                                     <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
                                 </Grid.RowDefinitions>
                                 <Label Grid.Row="0" Grid.Column="0">Name</Label>
                                 <TextBox Text="{Binding ContrName , UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="1" MinWidth="50"></TextBox>
                                 <Label Grid.Row="1" Grid.Column="0">IP</Label>
                                 <TextBox Text="{Binding ContrIP , UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="1" MinWidth="50"></TextBox>
+                                <Label Grid.Row="2" Grid.Column="0">ID</Label>
+                                <TextBox Text="{Binding MQTT_ID , UpdateSourceTrigger=PropertyChanged}" Grid.Row="2" Grid.Column="1" MinWidth="50"></TextBox>
+                                <Label Grid.Row="3" Grid.Column="0">Input</Label>
+                                <TextBox Text="{Binding MQTT_Input , UpdateSourceTrigger=PropertyChanged}" Grid.Row="3" Grid.Column="1" MinWidth="50"></TextBox>
+                                <Label Grid.Row="4" Grid.Column="0">Output</Label>
+                                <TextBox Text="{Binding MQTT_Output , UpdateSourceTrigger=PropertyChanged}" Grid.Row="4" Grid.Column="1" MinWidth="50"></TextBox>
                             </Grid>
                             
                             
@@ -125,7 +146,7 @@
                                         <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Cam_Input_Speed_Y , UpdateSourceTrigger=PropertyChanged}"></TextBox>
                                         <Label Grid.Row="5" Grid.Column="0">Zoom:</Label>
                                         <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Cam_Zoom , UpdateSourceTrigger=PropertyChanged}"></TextBox>
-                                        <Label Grid.Row="6" Grid.Column="0">Zoom:</Label>
+                                        <Label Grid.Row="6" Grid.Column="0">Focus:</Label>
                                         <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Cam_Fokus , UpdateSourceTrigger=PropertyChanged}"></TextBox>
                                         <Button Grid.Row="7" Grid.Column="1" Content="Tally" Background="{Binding Cam_Tally_Collor}" Click="Cam_Tally_Click" Template="{StaticResource NoMouseOverButtonTemplate}"/>
                                         <Button Grid.Row="7" Grid.Column="0" Content="Tally Blink" Background="{Binding Cam_Tally_Blink_Collor}" Click="Cam_Blink_Tally_Click" Template="{StaticResource NoMouseOverButtonTemplate}"/>
