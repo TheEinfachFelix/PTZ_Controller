@@ -53,7 +53,7 @@ namespace PTZ_Comander
 
             Cam_Name = "Diese cam",
 
-            Cam_Input_MoEye_X = 816, //With
+            Cam_Input_MoEye_X = 816, //With   Diese Wert sind die Max Pan und Tilt werte der Kammera also sollte das nicht angepasst werden
             Cam_Input_MoEye_Y = 212, //Hight
             Cam_Input_Joystick_Size = 140,
 
@@ -77,12 +77,11 @@ namespace PTZ_Comander
             Cam_Tally_Blink_Collor = Brushes.White
         };
         private MQTT myMQTT = new MQTT();
-
         public MainWindow()
         {
             try
             {
-                
+                Closing += OnWindowClosing;
                 DataContext = _Binding;
 
                 InitializeComponent();
@@ -94,7 +93,7 @@ namespace PTZ_Comander
                 _tabAdd = new TabItem();
                 _tabAdd.Header = "+";
                 _tabItems.Add(_tabAdd);
-////////////Console.WriteLine(settings[0].ToString());
+            ////////////Console.WriteLine(settings[0].ToString());
                 tabDynamic.DataContext = _tabItems;// bind tab control
                 
                 Update();
@@ -111,14 +110,8 @@ namespace PTZ_Comander
                 Reset_Stick_Position();
                 Update_Eye_Position();
 
-
                 ///////////////////////////////////////// MQTT Discover
-
-                //my_MQTT_Handler = new MQTT_Handler();
-                //Subscribe("visca/PTZ-01");
-                //Send_msg("visca/ping","");
                 //myMQTT.MQTT_Discover();
-                //Console.WriteLine();
 
             }
             catch (Exception ex)
@@ -129,8 +122,25 @@ namespace PTZ_Comander
 
         ~MainWindow()
         {
+            Console.WriteLine("closeclose");
             Store();
             SaveJson();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+
+            Application.Current.Shutdown();
+        }
+
+        public void OnWindowClosing(object sender, CancelEventArgs e)
+        {
+            foreach (var Topic in myMQTT.Subed_Toppics)
+            {
+                myMQTT.client.Unsubscribe(new string[] { Topic });
+            }
+            myMQTT.client.Disconnect();
         }
 
         public TabItem AddTabItem()
@@ -357,22 +367,25 @@ namespace PTZ_Comander
 
             if (settings[0].Controller[controllerNR].Cams[camNR].Tally)
             {
-                //_Binding.MQTT_Input
-                //"{\"camera\":{    \"index\":0,    \"port\":0  },  \"command\":\"Call_LED_Off\", \"parameter\":{\"value\":10 }}"
-
-                //myMQTT.MQTT_Push_Msg("esp / PTZ - 01 / push / visca / json","der" );
+                myMQTT.MQTT_Push_Msg("esp/PTZ-01/push/visca/json", "{\"camera\":{    \"index\":0,    \"port\":"+ camNR.ToString() + "  },  \"command\":\"Call_LED_On\",     \"parameter\":{\"value\":10 }}");
             }
             else if (settings[0].Controller[controllerNR].Cams[camNR].Tally_Blink)
             {
-                
+                myMQTT.MQTT_Push_Msg("esp/PTZ-01/push/visca/json", "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"Call_LED_Blink\", \"parameter\":{\"value\":10 }}");
             }
             else
             {
-
+                myMQTT.MQTT_Push_Msg("esp/PTZ-01/push/visca/json", "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"Call_LED_Off\",   \"parameter\":{\"value\":10 }}");
             }
+        }
 
-
-
+        private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            Cam_PTZF_Change();
+        }
+        private void Cam_AF_Click(object sender, RoutedEventArgs e)
+        {
+            myMQTT.MQTT_Push_Msg("esp/PTZ-01/push/visca/json", "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"Focus_Auto\"}");
         }
 
         private void Cam_Input_Joystick_Mouse_Move(object sender, MouseEventArgs e)
@@ -432,7 +445,6 @@ namespace PTZ_Comander
                 _Binding.Cam_Pos_X = e.GetPosition(tabDynamic).X - _Binding.Cam_Input_Window_Eye_Left                             - Cam_Input_Defauld_Offset.X;
                 _Binding.Cam_Pos_Y = _Binding.Cam_Input_Window_Eye_Top + _Binding.Cam_Input_MoEye_Y - e.GetPosition(tabDynamic).Y - Cam_Input_Defauld_Offset.Y;
                 Update_Eye_Position();
-
             }
         }
 
@@ -499,8 +511,18 @@ namespace PTZ_Comander
         private void Cam_Position_Change(object sender, TextChangedEventArgs e)
         {
             Update_Eye_Position();
+
+            Cam_PTZF_Change();
         }
 
+        private void Cam_PTZF_Change()
+        {
+            Store();
+
+            Cam TheCam = settings[0].Controller[controllerNR].Cams[camNR];
+
+            myMQTT.Cam_PTZF("esp/PTZ-01/push/visca/json", camNR, TheCam.X, TheCam.Y, TheCam.Zoom, TheCam.Focus);
+        }
 
         //////////////////////////// Json
         public void LoadJson()
@@ -531,33 +553,59 @@ namespace PTZ_Comander
             }
         }
 
-        ////////////////////////// MQTT
-
     }
-
-    public class MQTT:MainWindow
+////////////////////////// MQTT
+    public class MQTT
     {
-        MqttClient client;
+        public MqttClient client;
         List<Cam_Ping_Json> MQTT_Discover_Helper = new List<Cam_Ping_Json> { };
         String MQTT_Recive_Helper;
-        List<string> Subed_Toppics = new List<string>(); // ich Glaube das hat keinen zweck
+        public List<string> Subed_Toppics = new List<string>(); // ich Glaube das hat keinen zweck
 
+        DateTime lastExecution = DateTime.Now;
+
+        /////////// PTZF sachen
+        private Timer Cam_PTZF_Timer;
+        private string Cam_PTZF_Helper_Topic = "";
+        private string Cam_PTZF_Helper_Msg   = "";
 
         public MQTT() 
         {
-
             client = new MqttClient("192.168.178.116");
             string clientId = Guid.NewGuid().ToString();
             client.Connect(clientId);
+
+            //////// start timer for ptzf
+            Cam_PTZF_Timer = new Timer(Cam_PTZF_Timer_Callback, null, 0, 500);
         }
 
-        ~MQTT()
+        /// <summary>
+        /// Eine Einfache funktion Die Pan Tilt Zoom und Focus setzt und das alles in einer mqtt msg
+        /// </summary>
+        /// <param name="Topic">Die Topic auf der der Controller ist</param>
+        /// <param name="CamPort">der Port des Controllers auf dem die Camera hängt</param>
+        /// <param name="Pan"> Pan  [0-816]</param>
+        /// <param name="Tilt">Tilt [0-212]</param>
+        /// <param name="Zoom">Zoom [0-2885]</param>
+        /// <param name="Focus">Focus [0-Unbekannt]</param>
+        public void Cam_PTZF(string Topic, int CamPort, int Pan,int Tilt, int Zoom, int Focus)
         {
-            foreach (var Topic in Subed_Toppics)
+            Cam_PTZF_Helper_Topic = Topic;
+            Cam_PTZF_Helper_Msg = "{\"camera\": { \"index\": 0, \"port\": " + CamPort + " },\"command\": \"PTZF_Direct\",\"parameter\": {\"pan\": " + Pan.ToString() + ",\"tilt\": " + Tilt.ToString() + ",\"zoom\": " + Zoom + ",\"focus\": " + Focus + "},\"timeout\": 0, \"debug\":1}";
+            //Cam_PTZF_Helper_Msg = "{\"camera\": { \"index\": 0, \"port\": " + CamPort + " },\"command\": \"PT_Direct\"  ,\"parameter\":{ \"pan_speed\":0, \"tilt_speed\":0,\r\n    \"pan\":" + Pan.ToString() + ",    \"tilt\":" + Tilt.ToString() +     "},\"timeout\": 0, \"debug\":1}";
+        }
+
+        private void Cam_PTZF_Timer_Callback(Object stateInfo) 
+        {
+            if (Cam_PTZF_Helper_Topic == "")
             {
-                client.Unsubscribe(new string[] { Topic });
+                return;
             }
-            client.Disconnect();
+
+            lastExecution = DateTime.MinValue;
+            MQTT_Push_Msg(Cam_PTZF_Helper_Topic, Cam_PTZF_Helper_Msg);
+            Cam_PTZF_Helper_Topic = "";
+            Cam_PTZF_Helper_Msg   = "";
         }
 
         /// <summary>
@@ -602,8 +650,8 @@ namespace PTZ_Comander
             /////// Generate Obj and add it to list
             Cam_Ping_Json helper = JsonConvert.DeserializeObject<List<Cam_Ping_Json>>(Json)[0];
 
-            this.AddTabItem();
-            settings[0].Controller[-1].MQTT_ID = helper.id.ToString();
+            //this.AddTabItem();
+            //settings[0].Controller[-1].MQTT_ID = helper.id.ToString();
             Console.WriteLine(helper.ToString());
 
 
@@ -617,10 +665,15 @@ namespace PTZ_Comander
         /// <param name="Payload"></param>
         public void MQTT_Push_Msg(string Topic, string Payload)
         {
-            //client.Publish(Topic, Encoding.UTF8.GetBytes(Convert.ToString(Payload)), MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, false);
-            client.Publish("esp/PTZ-01/push/visca/json", Encoding.UTF8.GetBytes("dsafe"), MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, false);
-        }
+            if ((DateTime.Now - lastExecution).TotalMilliseconds <= 50) 
+            {
+                return;
+            }
 
+            client.Publish(Topic, Encoding.UTF8.GetBytes(Payload), MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, false);
+            lastExecution = DateTime.Now;
+            //Console.WriteLine(Payload);
+        }
 
         /// <summary>
         /// Send Payload to Topic and Return the Response
@@ -641,7 +694,7 @@ namespace PTZ_Comander
             Subed_Toppics.Add(inptTopic);
             client.Subscribe(new string[] { inptTopic }, new byte[] { MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE });
 
-            Thread.Sleep(settings[0].GeneralSettings.MQTT_Await_Requ_Duration);
+            Thread.Sleep(20);//settings[0].GeneralSettings.MQTT_Await_Requ_Duration
 
             client.Unsubscribe(new string[] { inptTopic });
             client.MqttMsgPublishReceived -= MQTT_Response_Received;
@@ -1132,6 +1185,9 @@ namespace PTZ_Comander
 -   [4] Motion EYE Hintergrundbild
 - X [3] Add json stuff
 -   [3] Map Discoverd data to json data
+-   [2] Find max Focus value
+-   [1] Fix Manuel Focus
+-   [2] Fix Tab change cam pos bug
 
 Controlls:
 -   [X] Tally Blink
@@ -1148,12 +1204,12 @@ Controlls:
 
 
 Visca:
--   [5] add coms mqttnet
+- X [5] add coms mqttnet
 - X [2] Discover Cams
 -   [3] Add Nice Popup for response to discover
 -   [3] Write Discovered data into json
 -   [2] error for no resopnse
 -   [2] beim erwarten von requests auch vorzeitig abbrechen können
--   [3] unlimited discover indem das ganze parsing in MQTT_Discover_Received passiert
+-   [3] unlimited discover indem das ganze parsing in MQTT_Discover_Received passiert / die emfangenen daten endlich weiter parsen
 
  */
