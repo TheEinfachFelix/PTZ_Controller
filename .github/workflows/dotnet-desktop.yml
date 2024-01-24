@@ -3,7 +3,8 @@ name: .NET Core Desktop
 on:
   push:
     branches:    
-      - main
+     - dev
+    #  - main
 
 env:
   Project_Path: PTZ_Commander/PTZ_Commander/PTZ_Commander.csproj
