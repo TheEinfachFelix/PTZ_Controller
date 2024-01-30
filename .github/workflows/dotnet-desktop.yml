@@ -1,0 +1,36 @@
+name: .NET Core Desktop
+
+on:
+  push:
+    branches:    
+     - dev
+    #  - main
+
+env:
+  Project_Path: PTZ_Commander/PTZ_Commander/PTZ_Commander.csproj
+
+jobs:
+  deploy:
+    runs-on: windows-latest  # For a list of available runner types, refer to
+                             # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+
+    # Install the .NET Core workload
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+
+        
+    - name: Dotnet restore
+      run: dotnet restore ${{env.Project_Path}}
+
+    - name: Dotnet build
+      run: dotnet build ${{env.Project_Path}} -c Release --no-restore
+
+    - name: Dotnet publish
+      run: dotnet publish ${{env.Project_Path}} -c Release --self-contained -r win-x64 -p:PublishSingleFile=true --no-build
+
