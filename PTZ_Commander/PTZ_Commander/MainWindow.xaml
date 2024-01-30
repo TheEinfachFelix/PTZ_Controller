@@ -94,6 +94,12 @@
                                     <RowDefinition />
                                     <RowDefinition />
                                     <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
                                 </Grid.RowDefinitions>
                                 <Label Grid.Row="0" Grid.Column="0">Name</Label>
                                 <TextBox Text="{Binding ContrName , UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="1" MinWidth="50"></TextBox>
@@ -105,6 +111,10 @@
                                 <TextBox Text="{Binding MQTT_Input , UpdateSourceTrigger=PropertyChanged}" Grid.Row="3" Grid.Column="1" MinWidth="50"></TextBox>
                                 <Label Grid.Row="4" Grid.Column="0">Output</Label>
                                 <TextBox Text="{Binding MQTT_Output , UpdateSourceTrigger=PropertyChanged}" Grid.Row="4" Grid.Column="1" MinWidth="50"></TextBox>
+                                <Label Grid.Row="5" Grid.Column="0">Stick Speed X</Label>
+                                <TextBox Text="{Binding Cam_Input_Stick_Speed_X , UpdateSourceTrigger=PropertyChanged}" Grid.Row="5" Grid.Column="1" MinWidth="50"></TextBox>
+                                <Label Grid.Row="6" Grid.Column="0">Stick Speed Y</Label>
+                                <TextBox Text="{Binding Cam_Input_Stick_Speed_Y , UpdateSourceTrigger=PropertyChanged}" Grid.Row="6" Grid.Column="1" MinWidth="50"></TextBox>
                             </Grid>
                             
                             
@@ -133,23 +143,52 @@
                                             <RowDefinition Height="*"/>
                                             <RowDefinition Height="*"/>
                                             <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
                                         </Grid.RowDefinitions>
                                         <Label Grid.Row="0" Grid.Column="0">Kamera Name:</Label>
                                         <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Cam_Name , UpdateSourceTrigger=PropertyChanged}" TextChanged="Cam_Position_Change"></TextBox>
-                                        <Label Grid.Row="1" Grid.Column="0">Kamera Position X:</Label>
+                                        <Label Grid.Row="1" Grid.Column="0">Position X:</Label>
                                         <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Cam_Pos_X , UpdateSourceTrigger=PropertyChanged}" TextChanged="Cam_Position_Change"></TextBox>
-                                        <Label Grid.Row="2" Grid.Column="0">Kamera Position Y:</Label>
+                                        <Label Grid.Row="2" Grid.Column="0">Position Y:</Label>
                                         <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Cam_Pos_Y , UpdateSourceTrigger=PropertyChanged}" TextChanged="Cam_Position_Change"></TextBox>
-                                        <Label Grid.Row="3" Grid.Column="0">Kamera Speed X:</Label>
+                                        <Label Grid.Row="3" Grid.Column="0">Speed X: [0-24]</Label>
                                         <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Cam_Input_Speed_X , UpdateSourceTrigger=PropertyChanged}"></TextBox>
-                                        <Label Grid.Row="4" Grid.Column="0">Kamera Speed Y:</Label>
+                                        <Label Grid.Row="4" Grid.Column="0">Speed Y: [0-18]</Label>
                                         <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Cam_Input_Speed_Y , UpdateSourceTrigger=PropertyChanged}"></TextBox>
                                         <Label Grid.Row="5" Grid.Column="0">Zoom:</Label>
                                         <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Cam_Zoom , UpdateSourceTrigger=PropertyChanged}"></TextBox>
                                         <Label Grid.Row="6" Grid.Column="0">Focus:</Label>
                                         <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Cam_Fokus , UpdateSourceTrigger=PropertyChanged}"></TextBox>
-                                        <Button Grid.Row="7" Grid.Column="1" Content="Tally" Background="{Binding Cam_Tally_Collor}" Click="Cam_Tally_Click" Template="{StaticResource NoMouseOverButtonTemplate}"/>
-                                        <Button Grid.Row="7" Grid.Column="0" Content="Tally Blink" Background="{Binding Cam_Tally_Blink_Collor}" Click="Cam_Blink_Tally_Click" Template="{StaticResource NoMouseOverButtonTemplate}"/>
+                                        <Button Grid.Row="7" Grid.Column="1" Content="Tally" Background="{Binding Cam_Tally_Collor}" Click="Cam_Button_Handler" Template="{StaticResource NoMouseOverButtonTemplate}"/>
+                                        <Button Grid.Row="7" Grid.Column="0" Content="Tally Blink" Background="{Binding Cam_Tally_Blink_Collor}" Click="Cam_Button_Handler" Template="{StaticResource NoMouseOverButtonTemplate}"/>
+                                        <CheckBox Grid.Row="8" Grid.Column="0" Content="X_Flip" IsChecked="{Binding Cam_X_Flip}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="8" Grid.Column="1" Content="Y_Flip" IsChecked="{Binding Cam_Y_Flip}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="9" Grid.Column="0" Content="Flip" IsChecked="{Binding Cam_Flip}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="9" Grid.Column="1" Content="Mirror" IsChecked="{Binding Cam_Mirror}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="8" Grid.Column="0" Content="X_Flip" IsChecked="{Binding Cam_X_Flip}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="8" Grid.Column="1" Content="Y_Flip" IsChecked="{Binding Cam_Y_Flip}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="9" Grid.Column="0" Content="Flip" IsChecked="{Binding Cam_Flip}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="9" Grid.Column="1" Content="Mirror" IsChecked="{Binding Cam_Mirror}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="10" Grid.Column="0" Content="Power_LED" IsChecked="{Binding Cam_Power_LED}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="10" Grid.Column="1" Content="Power_On" IsChecked="{Binding Cam_Power_On}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="11" Grid.Column="0" Content="IR_CameraControl" IsChecked="{Binding Cam_IR_CameraControl}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="11" Grid.Column="1" Content="IR_Output" IsChecked="{Binding Cam_IR_Output}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="12" Grid.Column="0" Content="Full_Speed" IsChecked="{Binding Cam_Full_Speed}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="12" Grid.Column="1" Content="Auto_AF" IsChecked="{Binding Cam_Auto_AF}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="13" Grid.Column="0" Content="BestView" IsChecked="{Binding Cam_BestView}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="13" Grid.Column="1" Content="MM_Detect" IsChecked="{Binding Cam_MM_Detect}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="14" Grid.Column="0" Content="Backlight" IsChecked="{Binding Cam_Backlight}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
                                     </Grid>
                                 </StackPanel>
                                 <!-- ______________ Zoom Focus ______________ -->
@@ -164,11 +203,11 @@
                                         <RowDefinition Height="25"></RowDefinition>
                                     </Grid.RowDefinitions>
 
-                                    <Button Grid.Column="0" Grid.RowSpan="2" Padding="10" Background="CornflowerBlue" Click="Cam_AF_Click">AF</Button>
+                                    <Button Grid.Column="0" Grid.RowSpan="2" Padding="10" Background="CornflowerBlue" Click="Cam_Button_Handler">AF</Button>
                                     <TextBlock Grid.Column="1" Grid.Row="0" Padding="4">Zoom</TextBlock>
                                     <TextBlock Grid.Column="1" Grid.Row="1" Padding="4">Fokus</TextBlock>
-                                    <Slider Grid.Column="2" Grid.Row="0" Maximum="2885" TickPlacement="BottomRight" Value="{Binding Cam_Zoom  , UpdateSourceTrigger=PropertyChanged}" ValueChanged="Slider_ValueChanged" IsMoveToPointEnabled="True"/>
-                                    <Slider Grid.Column="2" Grid.Row="1" Maximum="600"  TickPlacement="BottomRight" Value="{Binding Cam_Fokus , UpdateSourceTrigger=PropertyChanged}" ValueChanged="Slider_ValueChanged" IsMoveToPointEnabled="True"/>
+                                    <Slider x:Name="Zoom"  Grid.Column="2" Grid.Row="0" Maximum="2885" TickPlacement="BottomRight" Value="{Binding Cam_Zoom  , UpdateSourceTrigger=PropertyChanged}" ValueChanged="Slider_ValueChanged" IsMoveToPointEnabled="True"/>
+                                    <Slider x:Name="Fokus" Grid.Column="2" Grid.Row="1" Maximum="600"  TickPlacement="BottomRight" Value="{Binding Cam_Fokus , UpdateSourceTrigger=PropertyChanged}" ValueChanged="Slider_ValueChanged" IsMoveToPointEnabled="True"/>
                                 </Grid>
                                 <!-- ______________ Cam Inputs ______________ -->
                                 <Canvas MouseLeftButtonUp="Cam_Input_MotionEye_Mouse_Move" x:Name="main" DockPanel.Dock="Top">
