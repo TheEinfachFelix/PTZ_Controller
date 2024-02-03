@@ -83,6 +83,7 @@ namespace PTZ_Comander
         };
         private MQTT myMQTT = new MQTT();
 
+        private System.Threading.Timer Cam_Auto_AF_Timer;
 
         public MainWindow()
         {
@@ -90,6 +91,7 @@ namespace PTZ_Comander
             {
                 Closing += OnWindowClosing;
                 DataContext = _Binding;
+                Cam_Auto_AF_Timer = new System.Threading.Timer(Cam_Auto_AF_Timer_Callback, null, 0, 1000); // TODO: Binding for duration
 
                 InitializeComponent();
                 LoadJson();
@@ -268,6 +270,7 @@ namespace PTZ_Comander
         /// Diese Funktion braucht updates vom Json
         private void Update()
         {
+            //Console.WriteLine("Update-");
             settings_Block = true;
             //catch Errors if no settings are avalebile
             if (settings[0].Controller.Count == 0 )
@@ -311,7 +314,7 @@ namespace PTZ_Comander
             // update cam pos
             myMQTT.Cam_PTSS(TheController.MQTT_Input, camNR, TheCam.X, TheCam.Y, TheCam.Speed_X / 8, TheCam.Speed_X / 8);
 
-            settings_Block = false;
+            
 
             /// Bools
             _Binding.Cam_X_Flip           = TheCam.X_Flip;
@@ -330,18 +333,23 @@ namespace PTZ_Comander
 
             Cam_Bools_Updater();
 
-
+            settings_Block = false;
+            //Console.WriteLine("-Update");
         }
 
         /// Diese Funktion braucht updates vom Json
         private void Store()
         {
-
             //catch Errors if no settings are avalebile
             if (settings[0].Controller.Count == 0)
                 return;
             if (settings_Block)
+            {
+                //Console.WriteLine("exit Store");
                 return;
+            }
+
+            //Console.WriteLine("Store-");
 
             Controller TheController = settings[0].Controller[controllerNR];
             Cam TheCam = TheController.Cams[camNR];
@@ -375,6 +383,8 @@ namespace PTZ_Comander
             settings[0].GeneralSettings.Input_Stick_Speed_Y = _Binding.Cam_Input_Stick_Speed_Y;
 
             /// Bools
+
+
             TheCam.X_Flip           = _Binding.Cam_X_Flip;
             TheCam.Y_Flip           = _Binding.Cam_Y_Flip;
             TheCam.Full_Speed       = _Binding.Cam_Full_Speed;
@@ -388,6 +398,8 @@ namespace PTZ_Comander
             TheCam.BestView         = _Binding.Cam_BestView;
             TheCam.Power_On         = _Binding.Cam_Power_On;
             TheCam.Power_LED        = _Binding.Cam_Power_LED;
+
+            //Console.WriteLine("-Store");
         }
 
 
@@ -397,7 +409,7 @@ namespace PTZ_Comander
             switch ((sender as Button).Content)
             {
                 case "AF":
-                    myMQTT.MQTT_Push_Msg("esp/PTZ-01/push/visca/json", "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"Focus_Auto\"}");
+                    myMQTT.MQTT_Push_Msg(_Binding.MQTT_Input, "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"Focus_Auto\"}");
                     break;
                 case "Tally":
                     //Console.WriteLine("ComToCam: tally switch");
@@ -422,9 +434,9 @@ namespace PTZ_Comander
             switch ((sender as CheckBox).Content)
             {
                 case "X_Flip":
-                    break;
+                    break;// worx
                 case "Y_Flip":
-                    break;
+                    break;// worx
                 case "Flip":
                     if (_Binding.Cam_Flip)
                     {
@@ -474,7 +486,7 @@ namespace PTZ_Comander
                     {
                         myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "IR_CameraControl_Off");
                     }
-                    break;
+                    break;//
                 case "IR_Output":
                     if (_Binding.Cam_IR_Output)
                     {
@@ -484,9 +496,10 @@ namespace PTZ_Comander
                     {
                         myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "IR_Output_Off");
                     }
-                    break;
+                    break;//
                 case "Full_Speed":
-                    break;
+                    myMQTT.CAM_PTSS_Full_Speed = _Binding.Cam_Full_Speed;
+                    break; //worx
                 case "Auto_AF":
                     break;
                 case "Backlight":
@@ -498,7 +511,7 @@ namespace PTZ_Comander
                     {
                         myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "Backlight_Off");
                     }
-                    break;
+                    break; //
                 case "MM_Detect":
                     if (_Binding.Cam_MM_Detect)
                     {
@@ -508,7 +521,7 @@ namespace PTZ_Comander
                     {
                         myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "MM_Detect_Off");
                     }
-                    break;
+                    break; //
                 case "BestView":
                     if (_Binding.Cam_BestView)
                     {
@@ -610,6 +623,16 @@ namespace PTZ_Comander
             else
             {
                 myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "BestView_Stop");
+            }
+
+            myMQTT.CAM_PTSS_Full_Speed = _Binding.Cam_Full_Speed;
+        }
+
+        private void Cam_Auto_AF_Timer_Callback(Object stateInfo)
+        {
+            if (_Binding.Cam_Auto_AF)
+            {
+                myMQTT.MQTT_Push_Msg(_Binding.MQTT_Input, "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"Focus_Auto\"}");
             }
         }
         //////////////////////////// Cam Input
@@ -780,9 +803,20 @@ namespace PTZ_Comander
 
             Cam TheCam = settings[0].Controller[controllerNR].Cams[camNR];
 
-            myMQTT.Cam_PTSS(settings[0].Controller[controllerNR].MQTT_Input, camNR, TheCam.X, TheCam.Y, TheCam.Speed_X, TheCam.Speed_X);
-        }
+            int CAM_X = TheCam.X;
+            int CAM_Y = TheCam.Y;
+            if (_Binding.Cam_X_Flip)
+            {
+                CAM_X = (int)(_Binding.Cam_Input_MoEye_X - TheCam.X);
+            }
+            if (_Binding.Cam_Y_Flip)
+            {
+                CAM_Y = (int)(_Binding.Cam_Input_MoEye_Y - TheCam.Y);
+            }
 
+
+            myMQTT.Cam_PTSS(settings[0].Controller[controllerNR].MQTT_Input, camNR, CAM_X, CAM_Y, TheCam.Speed_X, TheCam.Speed_X);
+        }
 
         //////////////////////////// Json
         public void LoadJson()
@@ -831,6 +865,8 @@ namespace PTZ_Comander
         private string Cam_PTZF_Helper_Topic = "";
         private string Cam_PTZF_Helper_Msg = "";
 
+        public bool CAM_PTSS_Full_Speed = false;
+
         public MQTT() 
         {
             client = new MqttClient("192.168.178.116");
@@ -852,9 +888,21 @@ namespace PTZ_Comander
         /// <param name="Focus">Focus [0-Unbekannt]</param>
         public void Cam_PTSS(string Topic, int CamPort, int Pan,int Tilt, int Pan_Speed, int Tilt_Speed)
         {
-            Cam_PTSS_Helper_Topic = Topic;
-            //Cam_PTSS_Helper_Msg = "{\"camera\": { \"index\": 0, \"port\": " + CamPort + " },\"command\": \"PTZF_Direct\",\"parameter\": {\"pan\": " + Pan.ToString() + ",\"tilt\": " + Tilt.ToString() + ",\"zoom\": " + Zoom + ",\"focus\": " + Focus + "},\"timeout\": 0, \"debug\":1}";
-            Cam_PTSS_Helper_Msg = "{\"camera\": { \"index\": 0, \"port\": " + CamPort + " },\"command\": \"PT_Direct\"  ,\"parameter\":{ \"pan_speed\":" + Pan_Speed + ", \"tilt_speed\":" + Tilt_Speed + ",\r\n    \"pan\":" + Pan.ToString() + ",    \"tilt\":" + Tilt.ToString() +     "},\"timeout\": 0, \"debug\":1}";
+            //Console.WriteLine(CAM_PTSS_Full_Speed);
+            if (! CAM_PTSS_Full_Speed)
+            {
+                Cam_PTSS_Helper_Topic = Topic;
+                //Cam_PTSS_Helper_Msg = "{\"camera\": { \"index\": 0, \"port\": " + CamPort + " },\"command\": \"PTZF_Direct\",\"parameter\": {\"pan\": " + Pan.ToString() + ",\"tilt\": " + Tilt.ToString() + ",\"zoom\": " + Zoom + ",\"focus\": " + Focus + "},\"timeout\": 0, \"debug\":1}";
+                Cam_PTSS_Helper_Msg = "{\"camera\": { \"index\": 0, \"port\": " + CamPort + " },\"command\": \"PT_Direct\"  ,\"parameter\":{ \"pan_speed\":" + Pan_Speed + ", \"tilt_speed\":" + Tilt_Speed + ", \"pan\":" + Pan.ToString() + ",    \"tilt\":" + Tilt.ToString() + "},\"timeout\": 0, \"debug\":1}";
+            }
+            else
+            {
+                Cam_PTSS_Helper_Topic = Topic;
+                //Cam_PTSS_Helper_Msg = "{\"camera\": { \"index\": 0, \"port\": " + CamPort + " },\"command\": \"PTZF_Direct\",\"parameter\": {\"pan\": " + Pan.ToString() + ",\"tilt\": " + Tilt.ToString() + ",\"zoom\": " + Zoom + ",\"focus\": " + Focus + "},\"timeout\": 0, \"debug\":1}";
+                Cam_PTSS_Helper_Msg = "{\"camera\": { \"index\": 0, \"port\": " + CamPort + " },\"command\": \"PT_Direct\"  ,\"parameter\":{ \"pan_speed\":24, \"tilt_speed\":18,\"pan\":" + Pan.ToString() + ",    \"tilt\":" + Tilt.ToString() + "},\"timeout\": 0, \"debug\":1}";
+            }
+            
+            
         }
         public void Cam_PTZF(string Topic, int CamPort, int Pan, int Tilt, int Zoom, int Focus)
         {
@@ -1650,20 +1698,21 @@ namespace PTZ_Comander
 -   [2] Find max Focus value
 -   [1] Fix Manuel Focus
 - X [2] Fix Tab change cam pos bug
--   [ ] überkopf modus
--   [ ] Speed mode
--   [ ] AF ON OFF
+- X [1] überkopf modus
+- X [1] Speed mode
+- X [2] AF ON OFF
+-   [ ] checkbox bug on tab chage
 
 Controlls:
 -   [X] Tally Blink
 -   [ ] Gamma
--   [ ] Flip / Mirror
+- X [ ] Flip / Mirror
 -   [ ] White ballance
 -   [ ] Beleuchtung
 -   [ ] Iris
 -   [ ] Gain
--   [ ] Backlight
--   [ ] MM_Detect
+- X [ ] Backlight
+- X [ ] MM_Detect
 -   [ ] Best View
 
 
@@ -1679,22 +1728,4 @@ Visca:
 
 dotnet build PTZ_Commander.csproj -c Release
 
-
-
-
-
-           X "X_Flip":false, -> flip der x achse
-           X "Y_Flip":false, -> flip der y achse
-            "Full_Speed":false, -> immer ptzf
-            "Auto_AF":true, -> Timer for af -> braucht noch ein intervall
-           X "Flip":false, -> image flip
-           X "Mirror":false, -> image mirror
-            "Backlight":false, 
-            "MM_Detect":false,
-            
-           X "IR_Output":false,
-           X "IR_CameraControl":false,
-            "BestView":false,
-           X "Power_On":true,
-           X "Power_LED":false,
  */
