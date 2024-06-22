@@ -73,6 +73,10 @@
                     <TextBox Text="{Binding MQTT_Discover_Duration , UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="1" MinWidth="50"></TextBox>
                     <Label Grid.Row="2" Grid.Column="0">Await Requ Duration</Label>
                     <TextBox Text="{Binding MQTT_Await_Requ_Duration , UpdateSourceTrigger=PropertyChanged}" Grid.Row="2" Grid.Column="1" MinWidth="50"></TextBox>
+                    <Label Grid.Row="3" Grid.Column="0">Auto Cicle</Label>
+                    <TextBox Text="{Binding Gen_Auto_AF_cicle , UpdateSourceTrigger=PropertyChanged}" Grid.Row="3" Grid.Column="1" MinWidth="50"></TextBox>
+                    <Label Grid.Row="4" Grid.Column="0">MQTT Cicle</Label>
+                    <TextBox Text="{Binding Gen_mqtt_cicle , UpdateSourceTrigger=PropertyChanged}" Grid.Row="4" Grid.Column="1" MinWidth="50"></TextBox>
                 </Grid>
             </DataTemplate>
 
@@ -187,8 +191,20 @@
                                         <CheckBox Grid.Row="12" Grid.Column="0" Content="Full_Speed" IsChecked="{Binding Cam_Full_Speed}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
                                         <CheckBox Grid.Row="12" Grid.Column="1" Content="Auto_AF" IsChecked="{Binding Cam_Auto_AF}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
                                         <CheckBox Grid.Row="13" Grid.Column="0" Content="BestView" IsChecked="{Binding Cam_BestView}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
-                                        <CheckBox Grid.Row="13" Grid.Column="1" Content="MM_Detect" IsChecked="{Binding Cam_MM_Detect}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
-                                        <CheckBox Grid.Row="14" Grid.Column="0" Content="Backlight" IsChecked="{Binding Cam_Backlight}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        
+                                        <TextBox Grid.Row="13" Grid.Column="1" Text="{Binding Cam_BestView_Value , UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                                        <CheckBox Grid.Row="14" Grid.Column="0" Content="Gamma [0-7]" IsChecked="{Binding Cam_Gamma}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <TextBox Grid.Row="14" Grid.Column="1" Text="{Binding Cam_Gamma_Value , UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                                        <CheckBox Grid.Row="15" Grid.Column="0" Content="WB" IsChecked="{Binding Cam_WB}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <TextBox Grid.Row="15" Grid.Column="1" Text="{Binding Cam_WB_Value , UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                                        <CheckBox Grid.Row="16" Grid.Column="0" Content="AE" IsChecked="{Binding Cam_AE}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <Label Grid.Row="17" Grid.Column="0">Iris: [0-50]</Label>
+                                        <TextBox Grid.Row="17" Grid.Column="1" Text="{Binding Cam_Iris , UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                                        <Label Grid.Row="18" Grid.Column="0">Gain: [12-21]</Label>
+                                        <TextBox Grid.Row="18" Grid.Column="1" Text="{Binding Cam_Gain , UpdateSourceTrigger=PropertyChanged}"></TextBox>
+
+                                        <CheckBox Grid.Row="19" Grid.Column="1" Content="MM_Detect" IsChecked="{Binding Cam_MM_Detect}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
+                                        <CheckBox Grid.Row="19" Grid.Column="0" Content="Backlight" IsChecked="{Binding Cam_Backlight}" Checked="checkbox_Handler" Unchecked="checkbox_Handler"/>
                                     </Grid>
                                 </StackPanel>
                                 <!-- ______________ Zoom Focus ______________ -->

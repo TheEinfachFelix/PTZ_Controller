@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
+using System.Security.Permissions;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -43,6 +44,7 @@ namespace PTZ_Comander
         private bool settings_Block = false;
         int controllerNR = 0;
         int camNR = 0;
+        int helpcamNR = 0;
         int controllerINIT = 0;
 
         Vector Cam_Input_Defauld_Offset = new Vector(205,-54);
@@ -81,7 +83,7 @@ namespace PTZ_Comander
             Cam_Tally_Collor = Brushes.White,
             Cam_Tally_Blink_Collor = Brushes.White
         };
-        private MQTT myMQTT = new MQTT();
+        private MQTT myMQTT;
 
         private System.Threading.Timer Cam_Auto_AF_Timer;
 
@@ -91,7 +93,6 @@ namespace PTZ_Comander
             {
                 Closing += OnWindowClosing;
                 DataContext = _Binding;
-                Cam_Auto_AF_Timer = new System.Threading.Timer(Cam_Auto_AF_Timer_Callback, null, 0, 1000); // TODO: Binding for duration
 
                 InitializeComponent();
                 LoadJson();
@@ -104,9 +105,9 @@ namespace PTZ_Comander
                 _tabItems.Add(_tabAdd);
             ////////////Console.WriteLine(settings[0].ToString());
                 tabDynamic.DataContext = _tabItems;// bind tab control
-                
-                Update();
 
+                myMQTT = new MQTT(settings[0].GeneralSettings.mqtt_cicle);
+                Update();
                 tabDynamic.SelectedIndex = 0;
 
                 // load tabs from settings
@@ -116,8 +117,10 @@ namespace PTZ_Comander
                 }
 
                 // set cam input positions
+                
                 Reset_Stick_Position();
                 Update_Eye_Position();
+                Cam_Auto_AF_Timer = new System.Threading.Timer(Cam_Auto_AF_Timer_Callback, null, 0, settings[0].GeneralSettings.Auto_AF_cicle); // TODO: Binding for duration
 
                 ///////////////////////////////////////// MQTT Discover
                 //myMQTT.MQTT_Discover();
@@ -205,7 +208,10 @@ namespace PTZ_Comander
                         if (selectedTab == null || selectedTab.Equals(tab))
                         {
                             tabDynamic.SelectedItem = _tabItems[0];
-                        }  
+                        }
+                        
+                        controllerNR = 0;
+                        camNR = 0;
                     }
                 }
             }  
@@ -219,6 +225,7 @@ namespace PTZ_Comander
         /////////////////////////// Tab Change
         private void tabDynamic_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            //Console.WriteLine("tabdy-");
             Store();
 
             TabItem tab = (sender as TabControl).SelectedItem as TabItem;
@@ -244,27 +251,32 @@ namespace PTZ_Comander
                 if(controllerNR != 0)
                     controllerNR = _tabItems.IndexOf(tab)-1;
 
+                camNR = helpcamNR;
+
                 Update();
                 Cam_Bools_Updater();
+
             }
+            //Console.WriteLine("-tabdy");
         }
 
         private void Cam_Changed(object sender, SelectionChangedEventArgs e)
         {
-            Store();
-            
-            int tabNR = (sender as TabControl).SelectedIndex;
+            //Console.WriteLine("CamCam-");
+
 
             if ((sender as TabControl).SelectedItem as TabItem == null) return;
 
             //////////////// Update Cam NR ////////////////
-            camNR = tabNR;
-            if (camNR != 0)
-                camNR = tabNR - 1;
+            int tabNR = (sender as TabControl).SelectedIndex;
 
-            Update();
-            Cam_Bools_Updater();
+            helpcamNR = tabNR;
+            if (helpcamNR != 0)
+                helpcamNR = tabNR - 1;
+
+
             //Console.WriteLine($"cam NR {camNR}");
+            //Console.WriteLine("-CamCam");
         }
 
         /// Diese Funktion braucht updates vom Json
@@ -278,16 +290,18 @@ namespace PTZ_Comander
 
             Controller TheController = settings[0].Controller[controllerNR];
             Cam TheCam = TheController.Cams[camNR];
+            GeneralSettings gSet = settings[0].GeneralSettings;
 
-            /////////////////// set collors for talli light
-            Cam_Tally_Update_Collors();
+
 
             ///////////////// set Bindings
 
             _Binding.ContrIP = TheController.Ip;
-            _Binding.GenA = settings[0].GeneralSettings.a.ToString();
-            _Binding.MQTT_Await_Requ_Duration = settings[0].GeneralSettings.MQTT_Await_Requ_Duration;
-            _Binding.MQTT_Discover_Duration = settings[0].GeneralSettings.MQTT_Discover_Duration;
+            _Binding.GenA = gSet.a.ToString();
+            _Binding.MQTT_Await_Requ_Duration = gSet.MQTT_Await_Requ_Duration;
+            _Binding.MQTT_Discover_Duration = gSet.MQTT_Discover_Duration;
+            _Binding.Gen_Auto_AF_cicle = gSet.Auto_AF_cicle;
+            _Binding.Gen_mqtt_cicle = gSet.mqtt_cicle;
 
             ////////////////
             _Binding.Cam_Input_Speed_X = TheCam.Speed_X;
@@ -304,17 +318,19 @@ namespace PTZ_Comander
             _Binding.MQTT_Input = TheController.MQTT_Input;
             _Binding.MQTT_Output = TheController.MQTT_Output;
             //// Stick speed
-            _Binding.Cam_Input_Stick_Speed_X = settings[0].GeneralSettings.Input_Stick_Speed_X;
-            _Binding.Cam_Input_Stick_Speed_Y = settings[0].GeneralSettings.Input_Stick_Speed_Y;
+            _Binding.Cam_Input_Stick_Speed_X = gSet.Input_Stick_Speed_X;
+            _Binding.Cam_Input_Stick_Speed_Y = gSet.Input_Stick_Speed_Y;
 
             Update_Eye_Position();
 
+            //////////////////////////////////////////////////////////// TODO Remove these because they are not needet ////////////////////////////////////////////////////////////
+            // set collors for talli light
+            Cam_Tally_Update_Collors();
             // update cam optics
             myMQTT.Cam_PTZF(TheController.MQTT_Input, camNR, TheCam.X, TheCam.Y, TheCam.Zoom, TheCam.Focus);
             // update cam pos
             myMQTT.Cam_PTSS(TheController.MQTT_Input, camNR, TheCam.X, TheCam.Y, TheCam.Speed_X / 8, TheCam.Speed_X / 8);
-
-            
+            //////////////////////////////////////////////////////////// TODO Remove these because they are not needet ////////////////////////////////////////////////////////////
 
             /// Bools
             _Binding.Cam_X_Flip           = TheCam.X_Flip;
@@ -328,10 +344,16 @@ namespace PTZ_Comander
             _Binding.Cam_IR_Output        = TheCam.IR_Output;
             _Binding.Cam_IR_CameraControl = TheCam.IR_CameraControl;
             _Binding.Cam_BestView         = TheCam.BestView;
+            _Binding.Cam_BestView_Value   = TheCam.BestView_Value;//
+            _Binding.Cam_Gamma            = TheCam.Gamma;
+            _Binding.Cam_Gamma_Value      = TheCam.Gamma_Value;
+            _Binding.Cam_WB               = TheCam.WB;
+            _Binding.Cam_WB_Value         = TheCam.WB_Value;
+            _Binding.Cam_AE               = TheCam.AE;
+            _Binding.Cam_Iris             = TheCam.Iris;
+            _Binding.Cam_Gain             = TheCam.Gain;//
             _Binding.Cam_Power_On         = TheCam.Power_On;
             _Binding.Cam_Power_LED        = TheCam.Power_LED;
-
-            Cam_Bools_Updater();
 
             settings_Block = false;
             //Console.WriteLine("-Update");
@@ -353,14 +375,17 @@ namespace PTZ_Comander
 
             Controller TheController = settings[0].Controller[controllerNR];
             Cam TheCam = TheController.Cams[camNR];
+            GeneralSettings gSet = settings[0].GeneralSettings;
 
             ///////////////// store Bindings
             TheController.Name = _Binding.ContrName;
             TheController.Ip = _Binding.ContrIP;
-            settings[0].GeneralSettings.a = int.Parse(_Binding.GenA);
+            gSet.a = int.Parse(_Binding.GenA);
 
-             settings[0].GeneralSettings.MQTT_Await_Requ_Duration = _Binding.MQTT_Await_Requ_Duration;
-             settings[0].GeneralSettings.MQTT_Discover_Duration = _Binding.MQTT_Discover_Duration;
+            gSet.MQTT_Await_Requ_Duration = _Binding.MQTT_Await_Requ_Duration;
+            gSet.MQTT_Discover_Duration = _Binding.MQTT_Discover_Duration;
+            gSet.Auto_AF_cicle = _Binding.Gen_Auto_AF_cicle;
+            gSet.mqtt_cicle = _Binding.Gen_mqtt_cicle;
             ////////////////
 
             TheCam.Name = _Binding.Cam_Name;
@@ -379,11 +404,10 @@ namespace PTZ_Comander
             TheController.MQTT_Output = _Binding.MQTT_Output;
 
             //// Stick speed
-            settings[0].GeneralSettings.Input_Stick_Speed_X = _Binding.Cam_Input_Stick_Speed_X;
-            settings[0].GeneralSettings.Input_Stick_Speed_Y = _Binding.Cam_Input_Stick_Speed_Y;
+            gSet.Input_Stick_Speed_X = _Binding.Cam_Input_Stick_Speed_X;
+            gSet.Input_Stick_Speed_Y = _Binding.Cam_Input_Stick_Speed_Y;
 
             /// Bools
-
 
             TheCam.X_Flip           = _Binding.Cam_X_Flip;
             TheCam.Y_Flip           = _Binding.Cam_Y_Flip;
@@ -396,12 +420,19 @@ namespace PTZ_Comander
             TheCam.IR_Output        = _Binding.Cam_IR_Output;
             TheCam.IR_CameraControl = _Binding.Cam_IR_CameraControl;
             TheCam.BestView         = _Binding.Cam_BestView;
+            TheCam.BestView_Value   = _Binding.Cam_BestView_Value;//
+            TheCam.Gamma            = _Binding.Cam_Gamma;
+            TheCam.Gamma_Value      = _Binding.Cam_Gamma_Value;
+            TheCam.WB               = _Binding.Cam_WB;
+            TheCam.WB_Value         = _Binding.Cam_WB_Value;
+            TheCam.AE               = _Binding.Cam_AE;
+            TheCam.Iris             = _Binding.Cam_Iris;
+            TheCam.Gain             = _Binding.Cam_Gain;//
             TheCam.Power_On         = _Binding.Cam_Power_On;
             TheCam.Power_LED        = _Binding.Cam_Power_LED;
 
             //Console.WriteLine("-Store");
         }
-
 
         private void Cam_Button_Handler(object sender, RoutedEventArgs e)
         {
@@ -525,13 +556,43 @@ namespace PTZ_Comander
                 case "BestView":
                     if (_Binding.Cam_BestView)
                     {
-                        myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "BestView_On");
+                        myMQTT.MQTT_Push_Msg(_Binding.MQTT_Input, "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"BestView_On\",\"parameter\":{\"value\":" + _Binding.Cam_BestView_Value + " }}");
                     }
                     else
                     {
                         myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "BestView_Stop");
                     }
                     break; // braucht n value
+                case "Gamma [0-7]":
+                    if (!_Binding.Cam_Gamma)
+                    {
+                        myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "Gamma_Auto");
+                    }
+                    else
+                    {
+                        myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "Gamma_Manual");
+                    }
+                    break;
+                case "WB":
+                    if (!_Binding.Cam_WB)
+                    {
+                        myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "WB_Auto");
+                    }
+                    else
+                    {
+                        myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "WB_Table_Manual");
+                    }
+                    break;
+                case "AE":
+                    if (!_Binding.Cam_AE)
+                    {
+                        myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "AE_Auto");
+                    }
+                    else
+                    {
+                        myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "AE_Manual");
+                    }
+                    break;
 
                 default:
                     Console.WriteLine("Checkbox error. Not found in code Behind. Content is:" + (sender as CheckBox).Content);
@@ -542,6 +603,12 @@ namespace PTZ_Comander
 
         private void Cam_Bools_Updater()
         {
+            if (settings[0].Controller[controllerNR].Cams[camNR].init)
+            {
+                return;
+            }
+            settings[0].Controller[controllerNR].Cams[camNR].init = true;
+
             string this_MQTT_Topic = settings[0].Controller[controllerNR].MQTT_Input;
 
             if (_Binding.Cam_Flip)
@@ -615,17 +682,41 @@ namespace PTZ_Comander
             {
                 myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "MM_Detect_Off");
             }
-
             if (_Binding.Cam_BestView)
             {
-                myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "BestView_On");
+                myMQTT.MQTT_Push_Msg(_Binding.MQTT_Input, "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"BestView_On\",\"parameter\":{\"value\":" + _Binding.Cam_BestView_Value + " }}");
             }
             else
             {
                 myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "BestView_Stop");
             }
 
-            myMQTT.CAM_PTSS_Full_Speed = _Binding.Cam_Full_Speed;
+            if (!_Binding.Cam_Gamma)
+            {
+                myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "Gamma_Auto");
+            }
+            else
+            {
+                myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "Gamma_Manual");
+            }
+            if (!_Binding.Cam_WB)
+            {
+                myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "WB_Auto");
+            }
+            else
+            {
+                myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "WB_Table_Manual");
+            }
+            if (!_Binding.Cam_AE)
+            {
+                myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "AE_Auto");
+            }
+            else
+            {
+                myMQTT.Cam_Simple_Com(this_MQTT_Topic, camNR, "AE_Manual");
+            }
+
+                myMQTT.CAM_PTSS_Full_Speed = _Binding.Cam_Full_Speed;
         }
 
         private void Cam_Auto_AF_Timer_Callback(Object stateInfo)
@@ -634,6 +725,23 @@ namespace PTZ_Comander
             {
                 myMQTT.MQTT_Push_Msg(_Binding.MQTT_Input, "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"Focus_Auto\"}");
             }
+            if (_Binding.Cam_Gamma)
+            {
+                myMQTT.MQTT_Push_Msg(_Binding.MQTT_Input, "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"Gamma_Direct\",\"parameter\":{\"value\":"+ _Binding.Cam_Gamma_Value + " }}");
+            }
+            if (_Binding.Cam_WB)
+            {
+                myMQTT.MQTT_Push_Msg(_Binding.MQTT_Input, "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"WB_Table_Direct\",\"parameter\":{\"value\":" + _Binding.Cam_WB_Value + " }}");
+            }
+            if (_Binding.Cam_AE)
+            {
+                myMQTT.MQTT_Push_Msg(_Binding.MQTT_Input, "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"Iris_Direct\",\"parameter\":{\"value\":" + _Binding.Cam_Iris + " }}");
+                myMQTT.MQTT_Push_Msg_Force(_Binding.MQTT_Input, "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"Gain_Direct\",\"parameter\":{\"value\":" + _Binding.Cam_Gain + " }}");
+            }
+            if (_Binding.Cam_BestView)
+            {
+                myMQTT.MQTT_Push_Msg(_Binding.MQTT_Input, "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"BestView_On\",\"parameter\":{\"value\":" + _Binding.Cam_BestView_Value + " }}");
+            }
         }
         //////////////////////////// Cam Input
 
@@ -641,6 +749,7 @@ namespace PTZ_Comander
         {
             Controller TheController = settings[0].Controller[controllerNR];
             Cam TheCam = TheController.Cams[camNR];
+            string this_MQTT_Topic = TheController.MQTT_Input;
 
             _Binding.Cam_Tally_Collor = Brushes.White;
             if (TheCam.Tally)
@@ -652,15 +761,15 @@ namespace PTZ_Comander
 
             if (settings[0].Controller[controllerNR].Cams[camNR].Tally)
             {
-                myMQTT.MQTT_Push_Msg("esp/PTZ-01/push/visca/json", "{\"camera\":{    \"index\":0,    \"port\":"+ camNR.ToString() + "  },  \"command\":\"Call_LED_On\",     \"parameter\":{\"value\":10 }}");
+                myMQTT.MQTT_Push_Msg(this_MQTT_Topic, "{\"camera\":{    \"index\":0,    \"port\":"+ camNR.ToString() + "  },  \"command\":\"Call_LED_On\",     \"parameter\":{\"value\":10 }}");
             }
             else if (settings[0].Controller[controllerNR].Cams[camNR].Tally_Blink)
             {
-                myMQTT.MQTT_Push_Msg("esp/PTZ-01/push/visca/json", "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"Call_LED_Blink\", \"parameter\":{\"value\":10 }}");
+                myMQTT.MQTT_Push_Msg(this_MQTT_Topic, "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"Call_LED_Blink\", \"parameter\":{\"value\":10 }}");
             }
             else
             {
-                myMQTT.MQTT_Push_Msg("esp/PTZ-01/push/visca/json", "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"Call_LED_Off\",   \"parameter\":{\"value\":10 }}");
+                myMQTT.MQTT_Push_Msg(this_MQTT_Topic, "{\"camera\":{    \"index\":0,    \"port\":" + camNR.ToString() + "  },  \"command\":\"Call_LED_Off\",   \"parameter\":{\"value\":10 }}");
             }
         }
 
@@ -867,14 +976,14 @@ namespace PTZ_Comander
 
         public bool CAM_PTSS_Full_Speed = false;
 
-        public MQTT() 
+        public MQTT(int cicle) 
         {
             client = new MqttClient("192.168.178.116");
             string clientId = Guid.NewGuid().ToString();
             client.Connect(clientId);
 
             //////// start timer for ptzf
-            Cam_PTZF_Timer = new System.Threading.Timer(Cam_PTZF_Timer_Callback, null, 0, 500);
+            Cam_PTZF_Timer = new System.Threading.Timer(Cam_PTZF_Timer_Callback, null, 0, cicle);
         }
 
         /// <summary>
@@ -993,6 +1102,12 @@ namespace PTZ_Comander
         /// </summary>
         /// <param name="Topic"></param>
         /// <param name="Payload"></param>
+
+        public void MQTT_Push_Msg_Force(string Topic, string Payload)
+        {
+            lastExecution = DateTime.MinValue;
+            MQTT_Push_Msg(Topic, Payload);
+        }
         public void MQTT_Push_Msg(string Topic, string Payload)
         {
             if ((DateTime.Now - lastExecution).TotalMilliseconds <= 50) 
@@ -1052,12 +1167,16 @@ namespace PTZ_Comander
         public int MQTT_Await_Requ_Duration { get; set; }
         public int Input_Stick_Speed_X { get; set; }
         public int Input_Stick_Speed_Y { get; set; }
+
+        public int Auto_AF_cicle { get; set; }
+        public int mqtt_cicle { get; set; }
         public int a { get; set; }
         public int b { get; set; }
     }
 
     public class Cam
     {
+        public bool init { get; set; } = false;
         public string Name { get; set; }
         public bool Tally { get; set; }
         public bool Tally_Blink { get; set; }
@@ -1073,6 +1192,14 @@ namespace PTZ_Comander
         public bool IR_Output { get; set; }
         public bool IR_CameraControl { get; set; }
         public bool BestView { get; set; }
+        public int BestView_Value { get; set; }
+        public bool Gamma { get; set; }
+        public int Gamma_Value { get; set; }
+        public bool WB { get; set; }
+        public int WB_Value { get; set; }
+        public bool AE { get; set; }
+        public int Iris { get; set; }
+        public int Gain { get; set; }
         public bool Power_On { get; set; }
         public int Zoom { get; set; }
         public int Focus { get; set; }
@@ -1611,6 +1738,90 @@ namespace PTZ_Comander
                 NotifyPropertyChanged();
             }
         }
+        private int _Cam_BestView_Value;
+        public int Cam_BestView_Value
+        {
+            get { return _Cam_BestView_Value; }
+            set
+            {
+                _Cam_BestView_Value = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private bool _Cam_Gamma;
+        public bool Cam_Gamma
+        {
+            get { return _Cam_Gamma; }
+            set
+            {
+                _Cam_Gamma = value;
+                NotifyPropertyChanged();
+            }
+        }
+        private int _Cam_Gamma_Value;
+        public int Cam_Gamma_Value
+        {
+            get { return _Cam_Gamma_Value; }
+            set
+            {
+                _Cam_Gamma_Value = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private bool _Cam_WB;
+        public bool Cam_WB
+        {
+            get { return _Cam_WB; }
+            set
+            {
+                _Cam_WB = value;
+                NotifyPropertyChanged();
+            }
+        }
+        private int _Cam_WB_Value;
+        public int Cam_WB_Value
+        {
+            get { return _Cam_WB_Value; }
+            set
+            {
+                _Cam_WB_Value = value;
+                NotifyPropertyChanged();
+            }
+        }
+        private bool _Cam_AE;
+        public bool Cam_AE
+        {
+            get { return _Cam_AE; }
+            set
+            {
+                _Cam_AE = value;
+                NotifyPropertyChanged();
+            }
+        }
+        private int _Cam_Iris;
+        public int Cam_Iris
+        {
+            get { return _Cam_Iris; }
+            set
+            {
+                _Cam_Iris = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private int _Cam_Gain;
+        public int Cam_Gain
+        {
+            get { return _Cam_Gain; }
+            set
+            {
+                _Cam_Gain = value;
+                NotifyPropertyChanged();
+            }
+        }
+
         private bool _Cam_Power_On;
         public bool Cam_Power_On
         {
@@ -1622,6 +1833,32 @@ namespace PTZ_Comander
             }
         }
 
+        /////////////////// Cicle times
+
+        private int _Gen_Auto_AF_cicle;
+        public int Gen_Auto_AF_cicle
+        {
+            get { return _Gen_Auto_AF_cicle; }
+            set
+            {
+                _Gen_Auto_AF_cicle = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private int _Gen_mqtt_cicle;
+        public int Gen_mqtt_cicle
+        {
+            get { return _Gen_mqtt_cicle; }
+            set
+            {
+                _Gen_mqtt_cicle = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
@@ -1632,7 +1869,7 @@ namespace PTZ_Comander
         }
     }
 
-    ///////////////////////////////// MQTT 
+    ///////////////////////////////// MQTT   
     public class MqttJson
     {
         public string input { get; set; }
@@ -1675,8 +1912,12 @@ namespace PTZ_Comander
 
 
 /*
- TODO:
+Adding new feature:
+- add to Json
+- add to Binding
+- add to Update and Store
 
+ TODO:
 - X [5] Fix Binding
 - X [9] Template updating
 - X [3] tally push binding update
@@ -1690,31 +1931,45 @@ namespace PTZ_Comander
 - X [3] remov controller from json
 - X [2] autospawn tabs
 - X [2] Fix json delete
--   [ ] Controlls get Status 
 - X [3] Auto Save Cam Settings
--   [4] Motion EYE Hintergrundbild
 - X [3] Add json stuff
--   [3] Map Discoverd data to json data
--   [2] Find max Focus value
--   [1] Fix Manuel Focus
 - X [2] Fix Tab change cam pos bug
 - X [1] überkopf modus
 - X [1] Speed mode
 - X [2] AF ON OFF
--   [ ] checkbox bug on tab chage
+- X [1] checkbox bug on tab chage
+- X [1] add timer bindings to stuff (actual time and in ui)
+- x [2] minimize amounto of mqtt msgs
+- X [1] AE Gain not beeing send
+- X [3] fix controller del bug (controller nr)
+-   [ ] Controlls get Status 
+-   [4] Motion EYE Hintergrundbild
+-   [3] Map Discoverd data to json data
+-   [2] Find max Focus value              4098 4672
+-   [1] Fix Manuel Focus
+-   [2] Catching empy entry for boxes expecting int
+-   [2] MQTT passwort uname port 
+-   [1] Remove the mqtt stuff in update
 
-Controlls:
--   [X] Tally Blink
--   [ ] Gamma
-- X [ ] Flip / Mirror
--   [ ] White ballance
--   [ ] Beleuchtung
--   [ ] Iris
--   [ ] Gain
-- X [ ] Backlight
-- X [ ] MM_Detect
--   [ ] Best View
 
+mysteriöse sachen:
+- Manuel Focus
+- Gamma
+- power on
+- best view
+- AE
+
+
+auto af cicle
+cicle time for mqtt send stuff
+best view value
+gamma bool
+gamma value
+wb bool
+wb value
+AE Bool
+Iris Value 0-50
+Gain Value 12-21
 
 
 Visca:
